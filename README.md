@@ -1,77 +1,91 @@
 # LocalScribe
 
-LocalScribe is a macOS desktop app for local audio and video transcription. It uses Tauri 2, React, TypeScript, Rust, and `whisper-rs`/`whisper.cpp` so media files stay on the user's machine.
+**Private, offline audio and video transcription for Apple Silicon Macs.**
 
-The current target is Apple Silicon macOS 13+.
+[![CI](https://github.com/ukolov-dev/LocalScribe/actions/workflows/ci.yml/badge.svg)](https://github.com/ukolov-dev/LocalScribe/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2f6f62.svg)](LICENSE)
+![macOS 13+](https://img.shields.io/badge/macOS-13%2B-111111?logo=apple)
+![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M1%20or%20newer-555555)
+![Tauri 2](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 
-## Privacy Model
+LocalScribe is a privacy-first desktop speech-to-text app for macOS. It transcribes audio and video locally with Whisper/whisper.cpp, keeps media on your Mac, and produces editable transcripts with timestamps and optional speaker labels.
 
-LocalScribe is designed for local-first transcription:
+![LocalScribe transcribing audio locally on macOS with Whisper, timestamps, and speaker labels](doc/screenshots/localscribe-transcript.png)
 
-- Audio and video files are processed locally.
-- Transcription input files are not uploaded by the app.
-- Downloaded models are stored on the user's machine.
-- The app should not add telemetry or cloud processing by default.
+> [!NOTE]
+> LocalScribe is currently a source-first alpha for Apple Silicon on macOS 13+. Signed and notarized binary releases are not available yet.
 
-## Features
+## Why LocalScribe?
 
-- Local transcription without cloud uploads.
-- Whisper model manager with downloads and custom `.bin` model selection.
-- Audio/video input through drag and drop or the native file picker.
-- Language modes for auto, multilingual, and specific languages.
-- Optional speaker labels using the current heuristic diarization pipeline.
-- Export to `TXT` and `MD`.
-- FFmpeg sidecar conversion to 16 kHz mono PCM WAV.
+- **Offline transcription:** audio and video are processed on-device instead of being uploaded to a cloud transcription service.
+- **Local Whisper models:** download supported GGML models or select a custom Whisper `.bin` file.
+- **macOS-native workflow:** drag and drop media, use the native file picker, and run Whisper with Metal or CPU.
+- **Useful output:** edit the transcript, keep timestamps, add experimental speaker labels, and export to `TXT` or Markdown.
+- **Multilingual speech recognition:** use automatic, multilingual, or language-specific decoding modes.
+- **Open source:** built with Tauri 2, Rust, React, TypeScript, `whisper-rs`, whisper.cpp, and FFmpeg.
 
-## Current Status
+## How It Works
 
-This is an early desktop application. The main transcription flow is implemented, but release packaging still needs hardening before public binary distribution.
+1. Install or select a local Whisper model.
+2. Drop an audio or video file into LocalScribe.
+3. Choose language, decoding quality, timestamps, and optional speaker detection.
+4. Transcribe locally, edit the result, and export it.
 
-Known limitations:
+## Whisper Model Manager
 
-- Speaker diarization is heuristic-based. The app can manage speaker model downloads, but embedding inference is not connected to the pipeline yet.
-- The full Turbo model runs on CPU for stability and can be slow.
-- `SRT` and `VTT` export are planned, but the current app exports `TXT` and `MD`.
-- Production Developer ID signing and notarization are not configured.
-- FFmpeg and model licensing must be reviewed before distributing packaged binaries.
+Models are stored in macOS Application Support. Custom files are linked from their existing location rather than copied.
+
+![LocalScribe Whisper model manager for downloading and selecting local GGML models](doc/screenshots/localscribe-models.png)
+
+Supported built-in models:
+
+- `large-v3-turbo-q5_0` — recommended balance of speed, memory use, and quality.
+- `large-v3-turbo` — higher quality with greater CPU and memory requirements.
+- Custom Whisper-compatible GGML `.bin` models.
+
+Default model directory:
+
+```text
+~/Library/Application Support/LocalScribe/models/
+```
 
 ## Requirements
 
+- Apple Silicon Mac (M1 or newer recommended).
 - macOS 13 or newer.
-- Apple Silicon Mac recommended.
 - Node.js 18+.
 - Rust stable toolchain.
 - Xcode Command Line Tools.
 
-## Quick Start
+## Build and Run
 
-Install dependencies:
+Install the frontend dependencies:
 
 ```bash
 npm ci
 ```
 
-Run the Tauri app in development mode:
+Start the Tauri desktop app in development mode:
 
 ```bash
 npm run tauri dev
 ```
 
-## Development Commands
-
-Build the frontend:
-
-```bash
-npm run build
-```
-
-Build the macOS app bundle:
+Create a local macOS app build:
 
 ```bash
 npm run tauri build
 ```
 
-Run Rust tests:
+## Development and Tests
+
+Build the React frontend:
+
+```bash
+npm run build
+```
+
+Run the Rust test suite:
 
 ```bash
 cargo test --manifest-path src-tauri/Cargo.toml
@@ -83,58 +97,54 @@ Run a fast Rust compile check:
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
-## Models
+## Privacy and Network Access
 
-LocalScribe downloads Whisper-compatible GGML models from Hugging Face when requested by the user. Model files are not stored in this repository.
+LocalScribe is designed for local-first transcription:
 
-Default app model directory:
+- Input audio and video files are not uploaded by the app.
+- Transcription runs locally through Whisper/whisper.cpp.
+- Downloaded models remain on the user's machine.
+- No telemetry or cloud speech processing is enabled by default.
+- Network access is used to download requested models from the configured Hugging Face endpoints.
 
-```text
-~/Library/Application Support/LocalScribe/models/
-```
+## Current Status
 
-Supported built-in models:
+The primary local transcription flow is implemented, but public binary distribution still needs release hardening.
 
-- `large-v3-turbo-q5_0` - recommended for performance.
-- `large-v3-turbo` - higher quality, slower.
-- Custom `.bin` model selected by the user.
+Known limitations:
 
-## Network Access
+- Speaker diarization is experimental and currently heuristic-based.
+- The full Turbo model can be slow when running on CPU.
+- `SRT` and `VTT` export are planned; the current app exports `TXT` and `MD`.
+- Production Developer ID signing and notarization are not configured.
+- FFmpeg and model licensing must be reviewed before distributing packaged binaries.
 
-The app is designed to keep user media local. Network access is used for model downloads from configured model URLs, currently Hugging Face model endpoints defined in `src-tauri/src/models.rs` and `src-tauri/src/speaker_models.rs`.
+## Security
 
-Transcription input files are not uploaded by the app.
-
-## Security Notes
-
-- Tauri capabilities are intentionally narrow and currently expose core defaults plus native open/save dialogs.
+- Tauri capabilities are intentionally narrow and expose core defaults plus native open/save dialogs.
 - The desktop Content Security Policy is configured in `src-tauri/tauri.conf.json`.
 - Checksums are configured for built-in downloadable model files where available.
-- Do not commit local secrets, downloaded models, or generated binaries.
+- Generated binaries, downloaded models, local settings, and secrets are excluded from Git.
 
-## Repository Hygiene
-
-Do not commit generated or local artifacts:
-
-- `node_modules/`
-- `dist/`
-- `src-tauri/target/`
-- generated FFmpeg sidecar binaries
-- local settings and secrets
-- downloaded models
+Please report security issues according to [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
-Additional project notes live in `doc/`:
+- [Product specification](doc/LocalScribe.md)
+- [Diarization plan](doc/diarization-plan.md)
+- [Licensing notes](doc/licensing.md)
+- [Smoke-test guide](doc/smoke-test.md)
+- [Release checklist](doc/release-checklist.md)
+- [macOS signing and notarization](doc/macos-signing-notarization.md)
 
-- `doc/LocalScribe.md` - original product spec.
-- `doc/licensing.md` - practical licensing notes for source and binary releases.
-- `doc/smoke-test.md` - manual smoke test flow.
-- `doc/release-checklist.md` - release readiness checklist.
-- `doc/macos-signing-notarization.md` - macOS signing notes.
+## Contributing
+
+Issues, test results, and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+
+If LocalScribe is useful to you, consider starring the repository — it helps other people discover the project.
 
 ## License
 
-LocalScribe source code is licensed under the MIT License. See `LICENSE`.
+LocalScribe source code is available under the [MIT License](LICENSE).
 
-Third-party dependencies, FFmpeg binaries, and downloadable models have their own licenses and distribution terms. See `THIRD_PARTY_NOTICES.md`.
+Third-party dependencies, FFmpeg binaries, and downloadable models have their own licenses and distribution terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
