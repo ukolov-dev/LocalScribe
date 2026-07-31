@@ -8,6 +8,7 @@ src-tauri/binaries/ffmpeg-*
 .env*
 .claude/settings.local.json
 .playwright-mcp/
+.playwright-cli/
 
 # Local app/runtime artifacts
 *.part
