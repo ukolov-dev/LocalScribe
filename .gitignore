@@ -1,0 +1,14 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/binaries/ffmpeg-*
+*.log
+.DS_Store
+.env*
+.claude/settings.local.json
+.playwright-mcp/
+
+# Local app/runtime artifacts
+*.part
+*.wav

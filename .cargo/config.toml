@@ -1,0 +1,5 @@
+[env]
+MACOSX_DEPLOYMENT_TARGET = "13.0"
+CMAKE_OSX_DEPLOYMENT_TARGET = "13.0"
+CFLAGS = "-mmacosx-version-min=13.0"
+CXXFLAGS = "-mmacosx-version-min=13.0"
