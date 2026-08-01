@@ -37,19 +37,26 @@ Configured speaker model sources are defined in `src-tauri/src/speaker_models.rs
 
 LocalScribe uses FFmpeg as a sidecar binary for audio/video conversion.
 
-The current development setup uses the npm package `ffmpeg-static` to prepare the FFmpeg sidecar. The package metadata in this project identifies `ffmpeg-static` as `GPL-3.0-or-later`.
+The release sidecar is built from the unmodified official FFmpeg 8.1.2 source
+archive. Its SHA256 is pinned in `scripts/build-ffmpeg-lgpl.sh`. The build turns
+off GPL, nonfree, version-3-only, network, and optional external-library
+components and verifies that the resulting configuration is LGPL v2.1 or
+later.
 
-Do not distribute packaged app binaries until FFmpeg licensing obligations have been reviewed for the exact binary being shipped.
+Every binary LocalScribe release must include the exact FFmpeg source archive
+as a release asset. The app bundle includes the LGPL license, source
+provenance, checksum, and configure options.
 
 Relevant upstream references:
 
 - https://ffmpeg.org/legal.html
-- https://github.com/eugeneware/ffmpeg-static
+- https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
 
 Local FFmpeg notice files are stored under:
 
 - `src-tauri/binaries/ffmpeg.LICENSE`
 - `src-tauri/binaries/ffmpeg.README`
+- `src-tauri/binaries/ffmpeg.BUILD.txt`
 
 Generated FFmpeg executable files should not be committed to the source repository.
 

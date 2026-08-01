@@ -35,6 +35,14 @@ npm run build
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
+If your change touches media input, sidecars, packaging, or licensing, also run:
+
+```bash
+npm run ffmpeg:build
+npm run ffmpeg:verify
+npm run tauri build
+```
+
 For faster backend feedback:
 
 ```bash
@@ -48,6 +56,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 - Update frontend and backend shared types together.
 - Update documentation when changing commands, setup, model behavior, storage paths, or release behavior.
 - Do not commit generated build output, downloaded models, local settings, or secrets.
+- Discuss large roadmap items in an issue before investing in an implementation.
 
 ## Code Style
 

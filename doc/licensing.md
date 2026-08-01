@@ -28,29 +28,44 @@ The current `.gitignore` excludes generated FFmpeg sidecar binaries via:
 src-tauri/binaries/ffmpeg-*
 ```
 
-This keeps `src-tauri/binaries/ffmpeg.LICENSE` and `src-tauri/binaries/ffmpeg.README` available while excluding generated executables.
+This keeps the committed FFmpeg license, README, and build record available
+while excluding generated executables.
 
 ## FFmpeg
 
 LocalScribe uses FFmpeg as a sidecar executable for audio/video conversion.
 
+The project builds an unmodified FFmpeg 8.1.2 sidecar directly from the
+official archive. `scripts/build-ffmpeg-lgpl.sh` pins the archive by SHA256 and
+uses a closed build configuration:
+
+- `--disable-gpl`
+- `--disable-nonfree`
+- `--disable-autodetect`
+- `--disable-network`
+- no optional external codec libraries
+
+The build additionally verifies `CONFIG_GPL=0`, `CONFIG_NONFREE=0`, and
+`CONFIG_VERSION3=0`, then rejects an executable whose embedded configure line
+contains `--enable-gpl` or `--enable-nonfree`.
+
+The sidecar is a separate executable invoked as a child process; LocalScribe
+does not link FFmpeg libraries into its own executable. Binary releases must:
+
+1. Include `ffmpeg.LICENSE`, `ffmpeg.README`, and `ffmpeg.BUILD.txt` in the app.
+2. Attach the exact `ffmpeg-8.1.2.tar.xz` source archive beside the binary
+   release.
+3. Preserve the upstream copyright and license notices.
+4. Make the reproducible build script available in the corresponding
+   LocalScribe source tag.
+
 Relevant upstream references:
 
-- FFmpeg legal notes: https://ffmpeg.org/legal.html
-- `ffmpeg-static` package metadata: https://github.com/eugeneware/ffmpeg-static
+- FFmpeg legal and compliance notes: https://ffmpeg.org/legal.html
+- FFmpeg 8.1.2 source: https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
 
-Important practical point: the current development flow uses the npm package `ffmpeg-static`, whose package metadata identifies it as `GPL-3.0-or-later`.
-
-For source-only GitHub publication, this is documented as a development/build dependency. For packaged app distribution, do not publish bundled `.app`, `.dmg`, or `.zip` artifacts until the exact FFmpeg binary and its obligations have been reviewed.
-
-Reasonable binary distribution paths:
-
-1. Keep public releases source-only until licensing is reviewed.
-2. Ship a GPL-compatible binary release and satisfy the corresponding GPL obligations.
-3. Replace the bundled binary with a verified LGPL-only FFmpeg build and satisfy LGPL obligations.
-4. Do not bundle FFmpeg; require the user to install or select a local FFmpeg executable.
-
-Do not use an FFmpeg build configured with nonfree components for public redistribution.
+This engineering record is not a substitute for legal advice. Re-review the
+exact binary and notices whenever the FFmpeg version or configure flags change.
 
 ## Whisper and ASR Models
 
@@ -74,8 +89,9 @@ Before enabling public binary releases that preinstall or redistribute speaker m
 
 Before publishing binary releases:
 
-- Confirm the exact FFmpeg binary license and build configuration.
-- Confirm whether the release bundles FFmpeg or only downloads/prepares it locally.
+- Run `npm run ffmpeg:build` and `npm run ffmpeg:verify`.
+- Confirm the bundled executable still reports FFmpeg 8.1.2 and no GPL/nonfree flags.
+- Confirm the exact FFmpeg source archive is attached to the release.
 - Include third-party notices in the app bundle.
 - Confirm model files are not bundled unless their redistribution terms are reviewed.
 - Keep signing and notarization secrets outside the repository.

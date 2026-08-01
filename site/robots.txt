@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ukolov-dev.github.io/LocalScribe/sitemap.xml
