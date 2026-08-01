@@ -32,6 +32,11 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Prepare compile-only sidecar placeholder
+        run: |
+          TARGET_TRIPLE=$(rustc -vV | sed -n 's/^host: //p')
+          install -m 755 /dev/null "src-tauri/binaries/ffmpeg-$TARGET_TRIPLE"
+
       - name: Check Rust backend
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
