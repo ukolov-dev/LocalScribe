@@ -1,6 +1,6 @@
 [package]
 name = "localscribe"
-version = "0.1.0"
+version = "0.1.1"
 description = "Local audio and video transcription for macOS"
 authors = ["LocalScribe"]
 license = "MIT"

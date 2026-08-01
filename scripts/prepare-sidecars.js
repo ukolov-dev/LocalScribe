@@ -1,31 +1,42 @@
-import { chmodSync, copyFileSync, existsSync, mkdirSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { chmodSync, existsSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import ffmpegPath from "ffmpeg-static";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(__dirname, "..");
-const targetTriple = process.env.TAURI_TARGET_TRIPLE ?? hostTriple();
+const targetTriple =
+  process.env.TAURI_TARGET_TRIPLE ?? process.env.TAURI_ENV_TARGET_TRIPLE ?? hostTriple();
 const targetPath = resolve(projectRoot, "src-tauri", "binaries", `ffmpeg-${targetTriple}`);
-const binaryDir = dirname(targetPath);
+const buildScript = resolve(projectRoot, "scripts", "build-ffmpeg-lgpl.sh");
 
-if (!ffmpegPath || !existsSync(ffmpegPath)) {
-  throw new Error("ffmpeg-static did not provide a local ffmpeg binary.");
+if (!isExpectedBuild(targetPath)) {
+  execFileSync(buildScript, [], {
+    cwd: projectRoot,
+    env: { ...process.env, TAURI_TARGET_TRIPLE: targetTriple },
+    stdio: "inherit",
+  });
 }
 
-mkdirSync(binaryDir, { recursive: true });
-copyFileSync(ffmpegPath, targetPath);
 chmodSync(targetPath, 0o755);
-copyNotice("ffmpeg.LICENSE");
-copyNotice("ffmpeg.README");
 
 const bytes = statSync(targetPath).size;
-console.log(`Prepared ffmpeg sidecar: ${targetPath} (${bytes} bytes)`);
+console.log(`Verified LGPL-only ffmpeg sidecar: ${targetPath} (${bytes} bytes)`);
 
-function copyNotice(fileName) {
-  const source = join(dirname(ffmpegPath), fileName);
-  if (existsSync(source)) {
-    copyFileSync(source, join(binaryDir, fileName));
+function isExpectedBuild(binaryPath) {
+  if (!existsSync(binaryPath)) {
+    return false;
+  }
+
+  try {
+    const version = execFileSync(binaryPath, ["-version"], { encoding: "utf8" });
+    return (
+      version.includes("ffmpeg version 8.1.2") &&
+      !version.includes("--enable-gpl") &&
+      !version.includes("--enable-nonfree")
+    );
+  } catch {
+    return false;
   }
 }
 

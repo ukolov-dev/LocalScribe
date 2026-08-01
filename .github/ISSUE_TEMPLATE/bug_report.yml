@@ -1,0 +1,101 @@
+name: Bug report
+description: Report a reproducible LocalScribe problem
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve LocalScribe. Do not attach private audio, video, transcripts, model files, or credentials. A short synthetic reproduction is ideal.
+
+  - type: input
+    id: version
+    attributes:
+      label: LocalScribe version
+      description: Release tag or commit SHA
+      placeholder: v0.1.1
+    validations:
+      required: true
+
+  - type: input
+    id: mac
+    attributes:
+      label: Mac and macOS
+      description: Mac model/chip and macOS version
+      placeholder: MacBook Pro M2, macOS 15.5
+    validations:
+      required: true
+
+  - type: dropdown
+    id: media
+    attributes:
+      label: Input type
+      options:
+        - WAV
+        - MP3
+        - M4A
+        - MP4
+        - MOV
+        - WebM
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Whisper model and language mode
+      placeholder: large-v3-turbo-q5_0, Auto
+    validations:
+      required: true
+
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Transcription engine
+      options:
+        - Auto / Metal preferred
+        - Metal forced
+        - CPU forced
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the expected and actual result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Open LocalScribe
+        2. Select ...
+        3. Start transcription
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove private paths, transcript content, credentials, and personal data.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed private media, transcript content, credentials, and personal data.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true

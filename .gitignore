@@ -13,3 +13,4 @@ src-tauri/binaries/ffmpeg-*
 # Local app/runtime artifacts
 *.part
 *.wav
+!src-tauri/tests/fixtures/media/*.wav

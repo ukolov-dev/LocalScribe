@@ -1,12 +1,14 @@
 {
   "name": "localscribe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run prepare-sidecars && tsc && vite build",
+    "build": "tsc && vite build",
+    "ffmpeg:build": "sh scripts/build-ffmpeg-lgpl.sh",
+    "ffmpeg:verify": "sh scripts/verify-ffmpeg-sidecar.sh",
     "prepare-sidecars": "node scripts/prepare-sidecars.js",
     "generate-icons": "node scripts/generate-icons.js",
     "preview": "vite preview",
@@ -23,7 +25,6 @@
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "ffmpeg-static": "^5.3.0",
     "typescript": "^5.6.2",
     "vite": "^5.4.2"
   }

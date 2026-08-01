@@ -13,7 +13,7 @@ LocalScribe is a privacy-first desktop speech-to-text app for macOS. It transcri
 ![LocalScribe transcribing audio locally on macOS with Whisper, timestamps, and speaker labels](doc/screenshots/localscribe-transcript.png)
 
 > [!NOTE]
-> LocalScribe is currently a source-first alpha for Apple Silicon on macOS 13+. Signed and notarized binary releases are not available yet.
+> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The signed and notarized v0.1.1 release workflow is ready; the downloadable binary will appear after its Developer ID certificate is configured and the release candidate passes a clean-Mac smoke test.
 
 ## Why LocalScribe?
 
@@ -77,6 +77,9 @@ Create a local macOS app build:
 npm run tauri build
 ```
 
+The first Tauri run builds the pinned LGPL-only FFmpeg sidecar from official
+source. Later builds reuse the local compilation cache.
+
 ## Development and Tests
 
 Build the React frontend:
@@ -95,6 +98,13 @@ Run a fast Rust compile check:
 
 ```bash
 cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+Build and verify the bundled LGPL-only FFmpeg separately:
+
+```bash
+npm run ffmpeg:build
+npm run ffmpeg:verify
 ```
 
 ## Privacy and Network Access
@@ -116,8 +126,8 @@ Known limitations:
 - Speaker diarization is experimental and currently heuristic-based.
 - The full Turbo model can be slow when running on CPU.
 - `SRT` and `VTT` export are planned; the current app exports `TXT` and `MD`.
-- Production Developer ID signing and notarization are not configured.
-- FFmpeg and model licensing must be reviewed before distributing packaged binaries.
+- Production Developer ID secrets are not configured in GitHub yet.
+- Downloadable model licenses must be rechecked before the project ever bundles models directly.
 
 ## Security
 
@@ -130,16 +140,19 @@ Please report security issues according to [SECURITY.md](SECURITY.md).
 
 ## Documentation
 
+- [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 - [Product specification](doc/LocalScribe.md)
 - [Diarization plan](doc/diarization-plan.md)
 - [Licensing notes](doc/licensing.md)
 - [Smoke-test guide](doc/smoke-test.md)
 - [Release checklist](doc/release-checklist.md)
 - [macOS signing and notarization](doc/macos-signing-notarization.md)
+- [Launch kit](doc/launch-kit.md)
 
 ## Contributing
 
-Issues, test results, and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change.
+Issues, test results, and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) before submitting a change.
 
 If LocalScribe is useful to you, consider starring the repository — it helps other people discover the project.
 

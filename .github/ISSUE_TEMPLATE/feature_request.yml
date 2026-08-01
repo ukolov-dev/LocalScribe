@@ -1,0 +1,51 @@
+name: Feature request
+description: Propose a focused improvement to LocalScribe
+title: "[Feature]: "
+labels:
+  - enhancement
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        LocalScribe is privacy-first: proposals should keep media local by default and make any network behavior explicit.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the workflow or limitation, not only the desired implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed experience
+      description: What should the user be able to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: privacy
+    attributes:
+      label: Network or privacy impact
+      options:
+        - Fully local; no new network access
+        - Optional network access with explicit user action
+        - Unsure; needs design discussion
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the roadmap.
+          required: true

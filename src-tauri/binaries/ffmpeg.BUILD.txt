@@ -1,0 +1,40 @@
+LocalScribe FFmpeg sidecar build record
+======================================
+
+Upstream version: FFmpeg 8.1.2
+Upstream archive: https://ffmpeg.org/releases/ffmpeg-8.1.2.tar.xz
+SHA256: 464beb5e7bf0c311e68b45ae2f04e9cc2af88851abb4082231742a74d97b524c
+Source modifications: none
+Build script: scripts/build-ffmpeg-lgpl.sh
+Release target: aarch64-apple-darwin
+Minimum macOS version: 13.0
+
+Configure options for the arm64 release:
+
+  --arch=arm64
+  --target-os=darwin
+  --cc=clang
+  --sysroot=<active macOS SDK path>
+  --enable-cross-compile
+  --disable-gpl
+  --disable-nonfree
+  --disable-autodetect
+  --disable-network
+  --disable-doc
+  --disable-debug
+  --disable-ffplay
+  --disable-ffprobe
+  --disable-avdevice
+  --disable-shared
+  --enable-static
+  --enable-pic
+  --extra-cflags="-arch arm64 -mmacosx-version-min=13.0"
+  --extra-ldflags="-arch arm64 -mmacosx-version-min=13.0"
+
+The exact configure command, including the SDK path used by the builder, is
+embedded in the executable and can be inspected with:
+
+  ffmpeg -version
+
+The build script verifies CONFIG_GPL=0, CONFIG_NONFREE=0, CONFIG_VERSION3=0,
+and rejects any executable whose configure line enables GPL or nonfree code.
