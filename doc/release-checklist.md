@@ -18,7 +18,7 @@
 - Cancellation is tested during a long transcription.
 - Temporary WAV files are removed after success, error, and cancellation.
 
-## Release blockers before distribution
+## Release blockers before production distribution
 
 - Review and approve the generated production icon set.
 - Attach `ffmpeg-8.1.2-source.tar.xz` to the GitHub release and verify all three FFmpeg notice files are bundled.
@@ -37,3 +37,12 @@
 - Confirm the release workflow verifies `codesign`, Gatekeeper, and stapled notarization tickets.
 - Confirm the draft release contains a DMG, app archive, and `ffmpeg-8.1.2-source.tar.xz`.
 - Install the DMG on a clean Apple Silicon Mac and run the full transcription smoke test before publishing the draft.
+
+## Unsigned GitHub prerelease
+
+- Version in `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, and `src-tauri/tauri.conf.json` matches the release tag.
+- Push the matching `v*` tag only after CI passes on the release commit.
+- Confirm the release workflow verifies the ad-hoc app signature and DMG integrity.
+- Confirm the draft release is marked `Unsigned` and `Pre-release` and documents the expected Gatekeeper warning.
+- Confirm the draft contains a DMG, app archive, and `ffmpeg-8.1.2-source.tar.xz`.
+- Install the DMG on an Apple Silicon Mac and run a transcription smoke test before publishing the draft.

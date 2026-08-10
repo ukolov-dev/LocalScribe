@@ -13,7 +13,7 @@ LocalScribe is a privacy-first desktop speech-to-text app for macOS. It transcri
 ![LocalScribe transcribing audio locally on macOS with Whisper, timestamps, and speaker labels](doc/screenshots/localscribe-transcript.png)
 
 > [!NOTE]
-> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The signed and notarized v0.1.1 release workflow is ready; the downloadable binary will appear after its Developer ID certificate is configured and the release candidate passes a clean-Mac smoke test.
+> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The v0.1.1 binary is published as an unsigned prerelease: macOS Gatekeeper may require Control-clicking the app, choosing Open, and confirming once. A Developer ID signed and notarized build is planned.
 
 ## Why LocalScribe?
 
@@ -37,11 +37,16 @@ Models are stored in macOS Application Support. Custom files are linked from the
 
 ![LocalScribe Whisper model manager for downloading and selecting local GGML models](doc/screenshots/localscribe-models.png)
 
-Supported built-in models:
+Built-in downloads cover the useful stable Whisper.cpp profiles:
 
-- `large-v3-turbo-q5_0` — recommended balance of speed, memory use, and quality.
-- `large-v3-turbo` — higher quality with greater CPU and memory requirements.
+- `tiny-q5_1`, `base-q5_1`, and `small-q5_1` — compact multilingual options for faster transcription and lower memory use.
+- `large-v3-turbo-q5_0` — recommended multilingual balance of speed, memory use, and quality.
+- `large-v3-turbo-q8_0` and `large-v3-turbo` — higher-precision Turbo options.
+- `medium-q5_0`, `large-v3-q5_0`, and `large-v3` — slower multilingual accuracy-focused options.
+- `distil-large-v3.5` — fast long-form transcription for English audio only.
 - Custom Whisper-compatible GGML `.bin` models.
+
+Every built-in URL is pinned to an immutable Hugging Face revision. Downloads are checked against their exact file size and SHA-256 digest before installation.
 
 Default model directory:
 
@@ -119,13 +124,14 @@ LocalScribe is designed for local-first transcription:
 
 ## Current Status
 
-The primary local transcription flow is implemented, but public binary distribution still needs release hardening.
+The primary local transcription flow is implemented. Public binaries are currently ad-hoc signed prereleases; production distribution still needs Developer ID signing, notarization, and clean-Mac validation.
 
 Known limitations:
 
 - Speaker diarization is experimental and currently heuristic-based.
 - The full Turbo model can be slow when running on CPU.
 - `SRT` and `VTT` export are planned; the current app exports `TXT` and `MD`.
+- The v0.1.1 macOS prerelease is not Developer ID signed or notarized.
 - Production Developer ID secrets are not configured in GitHub yet.
 - Downloadable model licenses must be rechecked before the project ever bundles models directly.
 
