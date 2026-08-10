@@ -35,11 +35,29 @@ npm run tauri build
 
 For CI, store these values as secrets and never commit them.
 
-## GitHub release environment
+## GitHub unsigned prerelease
 
-The `Signed macOS release` workflow runs for `v*` tags, creates a draft
-prerelease, builds the arm64 app and DMG, signs nested binaries, notarizes and
-staples the artifacts, verifies them, and attaches the exact FFmpeg source.
+The `Unsigned macOS prerelease` workflow runs for `v*` tags, creates a draft
+prerelease, builds the arm64 app and DMG with an ad-hoc signature, verifies the
+app signature and DMG integrity, and attaches the exact FFmpeg source. It does
+not require Apple credentials and does not notarize the artifacts. The release
+body explicitly documents the expected Gatekeeper warning.
+
+After CI passes, create and push a tag matching the version in
+`src-tauri/tauri.conf.json`, for example:
+
+```bash
+git tag -a v0.1.1 -m "LocalScribe v0.1.1"
+git push origin v0.1.1
+```
+
+The workflow intentionally leaves the release as a draft prerelease so the DMG
+can be installed and smoke-tested before publication.
+
+## Future signed GitHub release environment
+
+To restore Developer ID signing and notarization, create a GitHub environment
+named `release` and add:
 
 Create a GitHub environment named `release` and add:
 
@@ -56,16 +74,9 @@ Export the certificate without line breaks:
 openssl base64 -A -in DeveloperIDApplication.p12 -out certificate-base64.txt
 ```
 
-After all secrets are configured and CI passes, create and push a tag matching
-the version in `src-tauri/tauri.conf.json`, for example:
-
-```bash
-git tag -a v0.1.1 -m "LocalScribe v0.1.1"
-git push origin v0.1.1
-```
-
-The workflow intentionally leaves the release as a draft prerelease so a clean
-machine installation can be checked before publication.
+The workflow must then restore certificate import, Apple notarization variables,
+Gatekeeper assessment, and stapled-ticket validation before being described as
+a signed production release.
 
 ## Manual verification
 
@@ -89,5 +100,5 @@ xcrun stapler validate src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/
 ## Notes
 
 - The bundled ffmpeg binary must be covered in third-party license notices before distribution.
-- Distribution outside your own machines requires a real Developer ID certificate and Apple notarization credentials.
+- Unsigned prereleases can be distributed for testing when their signing status and Gatekeeper behavior are disclosed. Production distribution requires a real Developer ID certificate and Apple notarization credentials.
 - Keep `Entitlements.plist` minimal; add permissions only when a concrete macOS capability requires them.

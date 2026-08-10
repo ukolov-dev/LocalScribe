@@ -17,7 +17,7 @@ type ModelsModalProps = {
 const translations: Record<"en" | "ru", Record<string, string>> = {
   en: {
     title: "Models",
-    description: "Stored in macOS application support. Custom files are linked, not copied.",
+    description: "Choose a speed/quality profile. Built-in downloads are pinned and SHA-256 verified; larger models need more memory.",
     modelName: "Model name",
     size: "Size",
     status: "Status",
@@ -35,7 +35,7 @@ const translations: Record<"en" | "ru", Record<string, string>> = {
   },
   ru: {
     title: "Модели",
-    description: "Хранятся в служебной папке macOS. Кастомные файлы связаны, а не копируются.",
+    description: "Выберите баланс скорости и качества. Встроенные загрузки закреплены и проверяются по SHA-256; крупным моделям нужно больше памяти.",
     modelName: "Название модели",
     size: "Размер",
     status: "Статус",
