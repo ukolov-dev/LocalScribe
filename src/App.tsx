@@ -68,7 +68,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     stateError: "Error",
     dropZoneDefault: "Drop audio/video here",
     dropZoneDragging: "Drop file here",
-    dropZoneFormats: "mp3, wav, m4a, mp4, mov, webm",
+    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm",
     modelLabel: "Model",
     modelHint: "Recommended: Turbo Q5 for best performance",
     engineLabel: "Engine",
@@ -155,7 +155,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     stateError: "Ошибка",
     dropZoneDefault: "Перетащите аудио/видео сюда",
     dropZoneDragging: "Отпустите файл",
-    dropZoneFormats: "mp3, wav, m4a, mp4, mov, webm",
+    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm",
     modelLabel: "Модель",
     modelHint: "Рекомендуется: Turbo Q5 для лучшей производительности",
     engineLabel: "Движок",
@@ -519,7 +519,7 @@ function App() {
       filters: [
         {
           name: "Audio and video",
-          extensions: ["mp3", "wav", "m4a", "mp4", "mov", "webm"]
+          extensions: ["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"]
         }
       ]
     });

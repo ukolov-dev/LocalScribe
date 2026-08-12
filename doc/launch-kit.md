@@ -8,14 +8,14 @@ not passed the clean-Mac smoke test.
 
 - Landing page: https://ukolov-dev.github.io/LocalScribe/
 - Repository: https://github.com/ukolov-dev/LocalScribe
-- Release: https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.1.1
+- Release: https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.1.2
 - Roadmap: https://github.com/ukolov-dev/LocalScribe/blob/main/ROADMAP.md
 
 ## Positioning
 
 **One line:** Private, offline audio and video transcription for Apple Silicon Macs.
 
-**Short description:** LocalScribe turns WAV, MP3, M4A, MP4, MOV, and WebM files
+**Short description:** LocalScribe turns AAC, WAV, MP3, M4A, MP4, MOV, and WebM files
 into editable transcripts with local Whisper models. Media stays on the Mac;
 network access is used only for model downloads requested by the user.
 
@@ -48,7 +48,7 @@ I built LocalScribe, an open-source macOS app for private audio and video
 transcription. It runs Whisper locally on Apple Silicon, keeps media on the
 device, and exports editable transcripts with timestamps.
 
-No cloud upload. No telemetry. WAV, MP3, M4A, MP4, MOV, and WebM.
+No cloud upload. No telemetry. AAC, WAV, MP3, M4A, MP4, MOV, and WebM.
 
 Try it and tell me where the workflow still feels rough:
 https://github.com/ukolov-dev/LocalScribe
@@ -59,7 +59,7 @@ https://github.com/ukolov-dev/LocalScribe
 видео на Apple Silicon Mac. Whisper работает прямо на устройстве, записи не
 уходят в облако, результат можно редактировать и экспортировать с таймкодами.
 
-Без телеметрии. Поддерживаются WAV, MP3, M4A, MP4, MOV и WebM.
+Без телеметрии. Поддерживаются AAC, WAV, MP3, M4A, MP4, MOV и WebM.
 
 Буду рад обратной связи по реальному рабочему процессу:
 https://github.com/ukolov-dev/LocalScribe

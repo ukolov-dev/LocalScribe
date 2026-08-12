@@ -47,8 +47,8 @@ After CI passes, create and push a tag matching the version in
 `src-tauri/tauri.conf.json`, for example:
 
 ```bash
-git tag -a v0.1.1 -m "LocalScribe v0.1.1"
-git push origin v0.1.1
+git tag -a v0.1.2 -m "LocalScribe v0.1.2"
+git push origin v0.1.2
 ```
 
 The workflow intentionally leaves the release as a draft prerelease so the DMG
@@ -94,7 +94,7 @@ Validate the stapled ticket on both the app and DMG:
 
 ```bash
 xcrun stapler validate src-tauri/target/aarch64-apple-darwin/release/bundle/macos/LocalScribe.app
-xcrun stapler validate src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/LocalScribe_0.1.1_aarch64.dmg
+xcrun stapler validate src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/LocalScribe_0.1.2_aarch64.dmg
 ```
 
 ## Notes

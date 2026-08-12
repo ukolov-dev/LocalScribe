@@ -13,13 +13,14 @@ LocalScribe is a privacy-first desktop speech-to-text app for macOS. It transcri
 ![LocalScribe transcribing audio locally on macOS with Whisper, timestamps, and speaker labels](doc/screenshots/localscribe-transcript.png)
 
 > [!NOTE]
-> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The v0.1.1 binary is published as an unsigned prerelease: macOS Gatekeeper may require Control-clicking the app, choosing Open, and confirming once. A Developer ID signed and notarized build is planned.
+> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The v0.1.2 binary is published as an unsigned prerelease: macOS Gatekeeper may require Control-clicking the app, choosing Open, and confirming once. A Developer ID signed and notarized build is planned.
 
 ## Why LocalScribe?
 
 - **Offline transcription:** audio and video are processed on-device instead of being uploaded to a cloud transcription service.
 - **Local Whisper models:** download supported GGML models or select a custom Whisper `.bin` file.
 - **macOS-native workflow:** drag and drop media, use the native file picker, and run Whisper with Metal or CPU.
+- **Common media formats:** open standalone AAC/ADTS, WAV, MP3, M4A, MP4, MOV, and WebM files.
 - **Useful output:** edit the transcript, keep timestamps, add experimental speaker labels, and export to `TXT` or Markdown.
 - **Multilingual speech recognition:** use automatic, multilingual, or language-specific decoding modes.
 - **Open source:** built with Tauri 2, Rust, React, TypeScript, `whisper-rs`, whisper.cpp, and FFmpeg.
@@ -131,7 +132,7 @@ Known limitations:
 - Speaker diarization is experimental and currently heuristic-based.
 - The full Turbo model can be slow when running on CPU.
 - `SRT` and `VTT` export are planned; the current app exports `TXT` and `MD`.
-- The v0.1.1 macOS prerelease is not Developer ID signed or notarized.
+- The v0.1.2 macOS prerelease is not Developer ID signed or notarized.
 - Production Developer ID secrets are not configured in GitHub yet.
 - Downloadable model licenses must be rechecked before the project ever bundles models directly.
 

@@ -8,7 +8,7 @@ pub enum AppError {
     NoModel,
     #[error("Unknown model id: {0}")]
     UnknownModel(String),
-    #[error("Unsupported file format. Supported formats: mp3, wav, m4a, mp4, mov, webm.")]
+    #[error("Unsupported file format. Supported formats: aac, mp3, wav, m4a, mp4, mov, webm.")]
     UnsupportedFormat,
     #[error("ffmpeg is not available. Install ffmpeg or bundle it as a sidecar for release.")]
     MissingFfmpeg,

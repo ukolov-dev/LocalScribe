@@ -63,7 +63,7 @@ The app uses Tauri's invoke/event pattern. All backend calls go through `src/lib
 - Progress and segment callbacks emit events to frontend
 
 **`audio.rs`** - Audio preprocessing
-- Validates input file formats (mp3, wav, m4a, mp4, mov, webm)
+- Validates input file formats (aac, mp3, wav, m4a, mp4, mov, webm)
 - Uses FFmpeg sidecar to convert to 16 kHz mono PCM WAV
 - Reads WAV samples as f32 vectors for Whisper
 

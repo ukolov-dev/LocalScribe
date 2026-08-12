@@ -5,7 +5,7 @@ directional; confirmed work is tracked in GitHub issues and milestones.
 
 ## Now — reliable first binary release
 
-- Publish the clearly labeled unsigned v0.1.1 Apple Silicon prerelease.
+- Publish clearly labeled unsigned Apple Silicon prereleases.
 - Publish a signed and notarized Apple Silicon DMG.
 - Validate installation and Metal transcription on clean macOS 13, 14, and 15.
 - Keep the LGPL-only FFmpeg build reproducible and source-complete.

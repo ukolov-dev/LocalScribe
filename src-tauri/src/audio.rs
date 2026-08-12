@@ -7,7 +7,7 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-const SUPPORTED_EXTENSIONS: &[&str] = &["mp3", "wav", "m4a", "mp4", "mov", "webm"];
+const SUPPORTED_EXTENSIONS: &[&str] = &["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"];
 
 pub struct PreparedAudio {
     pub samples: Vec<f32>,
@@ -187,5 +187,23 @@ fn read_wav_as_f32(path: &Path) -> AppResult<Vec<f32>> {
             "Unsupported converted WAV format: {:?}, {} bits.",
             spec.sample_format, spec.bits_per_sample
         ))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_input_file;
+    use std::fs;
+    use uuid::Uuid;
+
+    #[test]
+    fn accepts_standalone_aac_files() {
+        let path = std::env::temp_dir().join(format!("localscribe-{}.AAC", Uuid::new_v4()));
+        fs::write(&path, b"synthetic test fixture").expect("create AAC input");
+
+        let result = validate_input_file(&path);
+        fs::remove_file(&path).expect("remove AAC input");
+
+        assert!(result.is_ok());
     }
 }

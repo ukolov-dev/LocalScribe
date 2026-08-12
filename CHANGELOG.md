@@ -2,6 +2,14 @@
 
 All notable changes to LocalScribe are documented here.
 
+## [0.1.2] - 2026-08-12
+
+### Added
+
+- Standalone AAC/ADTS audio input in the file picker, drag-and-drop flow, and
+  local FFmpeg conversion pipeline.
+- Automated AAC decoding coverage for the bundled LGPL-only FFmpeg sidecar.
+
 ## [0.1.1] - 2026-08-10
 
 ### Added
@@ -26,5 +34,6 @@ All notable changes to LocalScribe are documented here.
 - Initial source-only alpha release with local Whisper transcription,
   timestamps, model management, transcript editing, and TXT/Markdown export.
 
+[0.1.2]: https://github.com/ukolov-dev/LocalScribe/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ukolov-dev/LocalScribe/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.1.0

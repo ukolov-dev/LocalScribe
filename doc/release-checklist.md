@@ -11,7 +11,7 @@
 - `src-tauri/target/release/bundle/macos/LocalScribe.app/Contents/MacOS/ffmpeg -version` works.
 - Model download is tested from UI with `large-v3-turbo-q5_0`.
 - Failed model download leaves only `.part` file and can be retried.
-- `mp3`, `wav`, `m4a`, `mp4`, `mov`, and `webm` inputs are smoke-tested.
+- `aac`, `mp3`, `wav`, `m4a`, `mp4`, `mov`, and `webm` inputs are smoke-tested.
 - Russian speech is tested with `large-v3-turbo-q5_0`.
 - Exported `TXT` and `MD` files are opened and timestamp formats are checked.
 - CLI smoke test in `doc/smoke-test.md` passes.

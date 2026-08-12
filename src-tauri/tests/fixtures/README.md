@@ -2,7 +2,7 @@
 
 The files in `media/` are half-second synthetic test signals used to verify the
 LGPL-only FFmpeg sidecar against every media extension accepted by LocalScribe:
-WAV, MP3, M4A, MP4, MOV, and WebM.
+AAC (ADTS), WAV, MP3, M4A, MP4, MOV, and WebM.
 
 They contain only a generated 440 Hz sine wave and, for video containers, a
 solid-color 160×90 frame. No third-party audio, video, or personal data is
