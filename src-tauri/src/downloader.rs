@@ -89,6 +89,9 @@ pub async fn download_speaker_model(
     app: AppHandle,
     model_id: String,
 ) -> AppResult<SpeakerModelInfo> {
+    // Automatic first-use setup and the model manager share the same .part files.
+    static DOWNLOAD: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+    let _download = DOWNLOAD.lock().await;
     let spec = speaker_models::spec_by_id(&model_id)?;
     let final_paths = spec
         .files
@@ -179,7 +182,6 @@ pub async fn download_speaker_model(
         emit_speaker_progress(&app, spec.id, completed_bytes, total_bytes)?;
     }
 
-    speaker_models::set_default_speaker_model_if_empty(&app, spec.id)?;
     let model = speaker_models::speaker_model_info_for_spec(&app, spec)?;
     app.emit(
         "speaker-model-download-completed",

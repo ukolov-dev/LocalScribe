@@ -4,11 +4,13 @@ const MAX_CONSECUTIVE_REPEATED_SEGMENTS = 2;
 const MAX_REPEATED_LONG_SEGMENTS = 2;
 const MAX_REPEATED_SHORT_SEGMENTS = 8;
 const MAX_REPEATED_ACKNOWLEDGEMENTS = 4;
+const DISTINCT_REPEAT_WINDOW_MS = 10_000;
 const ALPHANUMERIC = /[\p{L}\p{N}]/u;
 
 export function filterLiveTranscriptSegments(segments: TranscriptSegment[]): TranscriptSegment[] {
   const filtered: TranscriptSegment[] = [];
   const seenCounts = new Map<string, number>();
+  const lastSeenStarts = new Map<string, number>();
   let lastKey = "";
   let consecutiveCount = 0;
 
@@ -33,6 +35,10 @@ export function filterLiveTranscriptSegments(segments: TranscriptSegment[]): Tra
     const wordCount = key.split(/\s+/).filter(Boolean).length;
     const seenKey = repetitionSeenKey(key);
     const seenCount = seenCounts.get(seenKey) ?? 0;
+    const previousStart = lastSeenStarts.get(seenKey);
+    const startsInDistinctTimeWindow = previousStart !== undefined &&
+      segment.startMs - previousStart >= DISTINCT_REPEAT_WINDOW_MS;
+    lastSeenStarts.set(seenKey, segment.startMs);
     const maxSeen = isAcknowledgementKey(key)
       ? MAX_REPEATED_ACKNOWLEDGEMENTS
       : wordCount <= 3
@@ -40,8 +46,8 @@ export function filterLiveTranscriptSegments(segments: TranscriptSegment[]): Tra
         : MAX_REPEATED_LONG_SEGMENTS;
 
     if (
-      consecutiveCount > MAX_CONSECUTIVE_REPEATED_SEGMENTS ||
-      seenCount >= maxSeen ||
+      (!startsInDistinctTimeWindow &&
+        (consecutiveCount > MAX_CONSECUTIVE_REPEATED_SEGMENTS || seenCount >= maxSeen)) ||
       hasRunawayRepetition(key)
     ) {
       continue;

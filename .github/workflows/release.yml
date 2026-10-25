@@ -18,12 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -40,57 +34,61 @@ jobs:
           path: src-tauri/target/ffmpeg-lgpl
           key: ffmpeg-lgpl-8.1.2-aarch64-${{ hashFiles('scripts/build-ffmpeg-lgpl.sh') }}
 
-      - name: Install frontend dependencies
-        run: npm ci
-
       - name: Verify tag matches app version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          VERSION=$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')
           test "$GITHUB_REF_NAME" = "v$VERSION"
 
       - name: Build and verify LGPL-only FFmpeg
         env:
           TAURI_TARGET_TRIPLE: aarch64-apple-darwin
         run: |
-          npm run ffmpeg:build
-          npm run ffmpeg:verify
+          sh scripts/build-ffmpeg-lgpl.sh
+          sh scripts/verify-ffmpeg-sidecar.sh
 
-      - name: Build ad-hoc signed bundles
-        uses: tauri-apps/tauri-action@v1
+      - name: Build native SwiftUI app
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_TARGET_TRIPLE: aarch64-apple-darwin
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "LocalScribe ${{ github.ref_name }} (Unsigned)"
-          releaseBody: |
-            Unsigned Apple Silicon prerelease of LocalScribe.
+          LOCALSCRIBE_RELEASE: "1"
+        run: ./script/build_and_run.sh --build-only
 
-            Download the DMG, open it, and drag LocalScribe to Applications.
-            This build is not notarized because the project does not yet have Apple Developer credentials.
-            macOS Gatekeeper may require Control-clicking LocalScribe, choosing Open, and confirming once.
-
-            LocalScribe runs transcription locally. Whisper models are downloaded on demand and verified with SHA-256.
-            The exact LGPL FFmpeg source is attached to this release.
-          releaseDraft: true
-          prerelease: true
-          generateReleaseNotes: true
-          args: --target aarch64-apple-darwin --bundles app,dmg
-
-      - name: Verify ad-hoc signed artifacts
+      - name: Package and verify native app
         run: |
-          APP_PATH="src-tauri/target/aarch64-apple-darwin/release/bundle/macos/LocalScribe.app"
-          DMG_PATH=$(find src-tauri/target/aarch64-apple-darwin/release/bundle/dmg -name '*.dmg' -print -quit)
-          test -d "$APP_PATH"
-          test -n "$DMG_PATH"
+          APP_PATH="macos/.build/LocalScribe.app"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
           codesign -dv --verbose=4 "$APP_PATH" 2>&1 | grep -q 'Signature=adhoc'
-          hdiutil verify "$DMG_PATH"
+          mkdir -p macos/.build/dmg
+          ditto "$APP_PATH" macos/.build/dmg/LocalScribe.app
+          ln -s /Applications macos/.build/dmg/Applications
+          hdiutil create -volname LocalScribe -srcfolder macos/.build/dmg -format UDZO "macos/.build/LocalScribe_${GITHUB_REF_NAME}_aarch64.dmg"
+          hdiutil verify "macos/.build/LocalScribe_${GITHUB_REF_NAME}_aarch64.dmg"
+          ditto -c -k --keepParent "$APP_PATH" "macos/.build/LocalScribe_${GITHUB_REF_NAME}_aarch64.app.zip"
+          cp src-tauri/target/ffmpeg-lgpl/downloads/ffmpeg-8.1.2.tar.xz macos/.build/ffmpeg-8.1.2-source.tar.xz
+          cd macos/.build
+          shasum -a 256 "LocalScribe_${GITHUB_REF_NAME}_aarch64.dmg" "LocalScribe_${GITHUB_REF_NAME}_aarch64.app.zip" ffmpeg-8.1.2-source.tar.xz > SHA256SUMS.txt
 
-      - name: Attach exact FFmpeg source
+      - name: Create draft prerelease and attach artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cat > macos/.build/release-notes.md <<'NOTES'
+          Нативный LocalScribe для macOS 13+ на Apple Silicon.
+
+          - SwiftUI-интерфейс открывается из строки меню. Перетаскивание записи автоматически запускает расшифровку.
+          - Локальная нейросетевая диаризация всегда включена: число голосов определяется автоматически, ограничения в два человека нет.
+          - Сохраняются черновик, модели и настройки. Поддерживаются TXT/Markdown и импорт записей встреч.
+
+          Откройте DMG и перенесите LocalScribe в Applications. Модели речи и спикеров загружаются отдельно с проверкой SHA-256, обработка выполняется на Mac.
+
+          Сборка подписана ad-hoc, без Developer ID и нотариализации: macOS может потребовать разрешение на открытие. При шуме, похожих голосах и одновременной речи возможны ошибки. Проверка на чистом Mac и измерение точности на реальных встречах пока не проведены.
+
+          Приложены DMG, ZIP приложения, SHA256SUMS.txt и точный исходный код LGPL FFmpeg.
+          NOTES
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --draft --prerelease --title "LocalScribe $GITHUB_REF_NAME (Unsigned)" --notes-file macos/.build/release-notes.md
+          fi
           gh release upload "$GITHUB_REF_NAME" \
-            "src-tauri/target/ffmpeg-lgpl/downloads/ffmpeg-8.1.2.tar.xz#ffmpeg-8.1.2-source.tar.xz" \
+            "macos/.build/LocalScribe_${GITHUB_REF_NAME}_aarch64.dmg" \
+            "macos/.build/LocalScribe_${GITHUB_REF_NAME}_aarch64.app.zip" \
+            "macos/.build/ffmpeg-8.1.2-source.tar.xz" \
+            "macos/.build/SHA256SUMS.txt" \
             --clobber

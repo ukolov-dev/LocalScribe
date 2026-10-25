@@ -3,7 +3,13 @@
 LocalScribe is an early privacy-first macOS transcription app. This roadmap is
 directional; confirmed work is tracked in GitHub issues and milestones.
 
-## Now — reliable first binary release
+## Shipped in 0.3.0
+
+- Native SwiftUI menu-bar panel with automatic file-drop transcription.
+- Always-on local neural diarization with automatic speaker count.
+- Local draft restoration, native model management and meeting import/export.
+
+## Now — reliable distribution
 
 - Publish clearly labeled unsigned Apple Silicon prereleases.
 - Publish a signed and notarized Apple Silicon DMG.
@@ -22,7 +28,7 @@ directional; confirmed work is tracked in GitHub issues and milestones.
 
 ## Later — higher-quality speaker workflows
 
-- Replace heuristic speaker labels with a reviewed local diarization pipeline.
+- Benchmark diarization on real meetings, including noise and overlapping voices.
 - Add speaker renaming and merge/split controls.
 - Explore optional custom vocabulary and prompt presets.
 - Evaluate Intel Mac and additional platform support based on maintainer capacity.
@@ -30,7 +36,7 @@ directional; confirmed work is tracked in GitHub issues and milestones.
 ## Principles
 
 - Audio, video, and transcripts stay local by default.
-- Network access is explicit and limited to user-requested downloads.
+- Network access is limited to speech-model downloads and automatic first-use speaker-model setup.
 - Prerelease signing status is explicit; production artifacts will be Developer ID signed, verifiable, and accompanied by source and notices.
 - Quality and privacy take priority over feature count.
 

@@ -83,6 +83,40 @@ export type TranscriptionError = {
   message: string;
 };
 
+export type IntegrationRequest = {
+  schemaVersion: number;
+  id: string;
+  source: "express";
+  meetingId?: string | null;
+  meetingTitle?: string | null;
+  participants?: MeetingParticipant[];
+  speakerTimeline?: SpeakerTimelineEvent[];
+  mediaPath: string;
+  originalFileName: string;
+  requestedAt: string;
+  options?: {
+    language?: string | null;
+    decodingPreset?: "balanced" | "accurate" | null;
+    speakerMode?: string | null;
+    timestamps?: boolean | null;
+  };
+};
+
+export type MeetingParticipant = {
+  participantId?: string | null;
+  displayName: string;
+};
+
+export type SpeakerTimelineEvent = {
+  atMs: number;
+  speakers: MeetingParticipant[];
+};
+
+export type IntegrationCompletion = {
+  jobId: string;
+  transcriptPath: string;
+};
+
 export type TranscribeOptions = {
   jobId: string;
   filePath: string;
@@ -90,7 +124,6 @@ export type TranscribeOptions = {
   modelPath?: string;
   engine?: "auto" | "metal" | "cpu";
   speakerMode?: string;
-  speakerModelId?: string;
   language: string;
   decodingPreset?: "balanced" | "accurate";
   initialPrompt?: string;

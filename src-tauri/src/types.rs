@@ -76,8 +76,8 @@ pub struct TranscribeOptions {
     pub model_id: Option<String>,
     pub model_path: Option<String>,
     pub engine: Option<String>,
+    // Accepted for older clients; transcription always assigns speakers.
     pub speaker_mode: Option<String>,
-    pub speaker_model_id: Option<String>,
     pub language: String,
     pub decoding_preset: Option<String>,
     pub initial_prompt: Option<String>,
@@ -144,6 +144,110 @@ pub struct TranscriptionError {
     pub message: String,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IntegrationOptions {
+    pub language: Option<String>,
+    pub decoding_preset: Option<String>,
+    pub speaker_mode: Option<String>,
+    pub timestamps: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MeetingParticipant {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub participant_id: Option<String>,
+    pub display_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerTimelineEvent {
+    pub at_ms: u64,
+    #[serde(default)]
+    pub speakers: Vec<MeetingParticipant>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerAssignment {
+    pub speaker: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub participant_id: Option<String>,
+    pub display_name: String,
+    pub confidence: f32,
+    pub state: String,
+    pub source: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IntegrationRequest {
+    pub schema_version: u32,
+    pub id: String,
+    pub source: String,
+    pub meeting_id: Option<String>,
+    #[serde(default)]
+    pub meeting_title: Option<String>,
+    #[serde(default)]
+    pub participants: Vec<MeetingParticipant>,
+    #[serde(default)]
+    pub speaker_timeline: Vec<SpeakerTimelineEvent>,
+    pub media_path: String,
+    pub original_file_name: String,
+    pub requested_at: String,
+    #[serde(default)]
+    pub options: IntegrationOptions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IntegrationCompletion {
+    pub job_id: String,
+    pub transcript_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MeetingSummary {
+    pub text: String,
+    pub model: String,
+    pub generated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MeetingRecord {
+    pub schema_version: u32,
+    pub id: String,
+    pub source: String,
+    pub meeting_id: Option<String>,
+    pub title: String,
+    pub created_at: String,
+    pub media_path: String,
+    pub transcript_path: String,
+    pub status: String,
+    #[serde(default)]
+    pub participants: Vec<MeetingParticipant>,
+    #[serde(default)]
+    pub speaker_assignments: Vec<SpeakerAssignment>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub segments_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<MeetingSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MeetingDetail {
+    #[serde(flatten)]
+    pub meeting: MeetingRecord,
+    pub transcript: String,
+    #[serde(default)]
+    pub segments: Vec<TranscriptSegment>,
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportFormat {
@@ -158,4 +262,24 @@ pub struct ExportRequest {
     pub output_path: String,
     pub text: String,
     pub segments: Vec<TranscriptSegment>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_speaker_model_option_does_not_break_transcription_requests() {
+        let options: TranscribeOptions = serde_json::from_str(
+            r#"{
+            "filePath": "/tmp/input.wav", "language": "en", "timestamps": true,
+            "speakerMode": "auto", "speakerModelId": "speaker-lite"
+        }"#,
+        )
+        .unwrap();
+        assert_eq!(options.speaker_mode.as_deref(), Some("auto"));
+        assert!(!serde_json::to_string(&options)
+            .unwrap()
+            .contains("speakerModelId"));
+    }
 }

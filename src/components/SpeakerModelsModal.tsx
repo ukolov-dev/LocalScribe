@@ -3,11 +3,9 @@ import type { DownloadProgress, SpeakerModelInfo } from "../types/localscribe";
 
 type SpeakerModelsModalProps = {
   models: SpeakerModelInfo[];
-  selectedModelId: string;
   downloadProgress: Record<string, DownloadProgress>;
   busyModelId: string | null;
   onClose: () => void;
-  onUse: (model: SpeakerModelInfo) => void;
   onDownload: (modelId: string) => void;
   onDelete: (modelId: string) => void;
   onChooseCustom: (path: string) => void;
@@ -15,11 +13,9 @@ type SpeakerModelsModalProps = {
 
 export function SpeakerModelsModal({
   models,
-  selectedModelId,
   downloadProgress,
   busyModelId,
   onClose,
-  onUse,
   onDownload,
   onDelete,
   onChooseCustom
@@ -47,7 +43,7 @@ export function SpeakerModelsModal({
         <header className="modalHeader">
           <div>
             <h2>Speaker models</h2>
-            <p>VAD and speaker embedding model packs stored locally.</p>
+            <p>Local neural diarization with automatic speaker count. Models download on first use.</p>
           </div>
           <button className="iconButton" type="button" onClick={onClose} title="Close">
             x
@@ -62,16 +58,12 @@ export function SpeakerModelsModal({
             <span>Action</span>
           </div>
 
-          {models.map((model) => {
+          {models.filter((model) => model.id === "speaker-neural").map((model) => {
             const progress = downloadProgress[model.id];
             const busy = busyModelId === model.id;
             const status = progress
               ? `Downloading ${Math.round(progress.progress)}%`
-              : model.installed
-                ? selectedModelId === model.id
-                  ? "Selected"
-                  : "Installed"
-                : "Not installed";
+              : model.installed ? "Installed" : "Not installed";
 
             return (
               <div className="modelRow" role="row" key={model.id}>
@@ -97,9 +89,6 @@ export function SpeakerModelsModal({
                     </button>
                   ) : model.installed ? (
                     <>
-                      <button type="button" onClick={() => onUse(model)}>
-                        Use
-                      </button>
                       <button type="button" onClick={() => onDelete(model.id)} disabled={busy}>
                         Delete
                       </button>
@@ -112,9 +101,6 @@ export function SpeakerModelsModal({
 
                   {model.custom && model.installed ? (
                     <>
-                      <button type="button" onClick={() => onUse(model)}>
-                        Use
-                      </button>
                       <button type="button" onClick={() => onDelete(model.id)} disabled={busy}>
                         Clear
                       </button>

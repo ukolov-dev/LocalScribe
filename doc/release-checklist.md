@@ -7,8 +7,12 @@
 - `npm run build` passes.
 - `npm run ffmpeg:build` builds FFmpeg 8.1.2 with LGPL-only configuration.
 - `npm run ffmpeg:verify` decodes all six committed media fixtures.
-- `npm run tauri build` produces `LocalScribe.app`.
-- `src-tauri/target/release/bundle/macos/LocalScribe.app/Contents/MacOS/ffmpeg -version` works.
+- `swift test --package-path macos` passes.
+- `LOCALSCRIBE_RELEASE=1 ./script/build_and_run.sh --build-only` produces `macos/.build/LocalScribe.app`.
+- `macos/.build/LocalScribe.app/Contents/MacOS/ffmpeg -version` works.
+- Launch shows a menu-bar icon without a Dock icon or open panel; clicking the icon toggles the SwiftUI panel below it.
+- Dropping one recording starts transcription automatically with speaker labels; hiding the panel keeps processing active.
+- Relaunch restores the last transcript and edits from the local draft.
 - Model download is tested from UI with `large-v3-turbo-q5_0`.
 - Failed model download leaves only `.part` file and can be retried.
 - `aac`, `mp3`, `wav`, `m4a`, `mp4`, `mov`, and `webm` inputs are smoke-tested.

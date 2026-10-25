@@ -51,3 +51,13 @@ const acknowledgementCount = filtered.filter((item) => {
 
 assert.equal(acknowledgementCount, 4);
 assert(filtered.some((item) => item.text === "I have been to Italy."));
+
+const spacedRepetitions = [0, 20_000, 40_000].map((startMs, index) => ({
+  ...segment(index, "Please confirm the meeting time."), startMs, endMs: startMs + 1_000
+}));
+assert.equal(transcriptFilter.filterLiveTranscriptSegments(spacedRepetitions).length, 3);
+
+const recentDiscardedRepeat = [0, 1_000, 2_000, 11_500].map((startMs, index) => ({
+  ...segment(index, "Please confirm the meeting time."), startMs, endMs: startMs + 500
+}));
+assert.equal(transcriptFilter.filterLiveTranscriptSegments(recentDiscardedRepeat).length, 2);
