@@ -7,7 +7,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ModelSpec {
@@ -148,11 +148,7 @@ pub const MODEL_SPECS: &[ModelSpec] = &[
 ];
 
 pub fn models_dir(app: &AppHandle) -> AppResult<PathBuf> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| AppError::Config(error.to_string()))?
-        .join("models");
+    let dir = crate::storage::data_dir(app)?.join("models");
     fs::create_dir_all(&dir)?;
     Ok(dir)
 }

@@ -1,18 +1,21 @@
 {
   "name": "localscribe",
-  "version": "0.1.2",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "node scripts/test-feedback-state.mjs && node scripts/test-transcript-filter.mjs && node scripts/test-app-state.mjs",
     "ffmpeg:build": "sh scripts/build-ffmpeg-lgpl.sh",
     "ffmpeg:verify": "sh scripts/verify-ffmpeg-sidecar.sh",
     "prepare-sidecars": "node scripts/prepare-sidecars.js",
     "generate-icons": "node scripts/generate-icons.js",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "macos:build": "./script/build_and_run.sh --build-only",
+    "macos:run": "./script/build_and_run.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

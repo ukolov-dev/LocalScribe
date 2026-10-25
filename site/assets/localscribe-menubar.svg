@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="920" viewBox="0 0 1200 920" role="img" aria-labelledby="title desc">
+<title id="title">LocalScribe native menu-bar interface</title>
+<desc id="desc">Interface illustration with a drop zone, always-on speaker recognition and an example transcript with three speakers.</desc>
+<defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#dcebe3"/><stop offset="1" stop-color="#f4f7f4"/></linearGradient>
+<filter id="shadow" x="-.3" y="-.2" width="1.6" height="1.5"><feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#183e2c" flood-opacity=".16"/></filter>
+</defs>
+<rect width="1200" height="920" fill="url(#bg)"/>
+<path d="M0 610Q340 330 660 580T1200 530V920H0Z" fill="#b9d2c3" opacity=".22"/>
+<rect width="1200" height="54" fill="#f8fbf9" opacity=".94"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" fill="#172b23">
+<text x="28" y="34" font-size="20" font-weight="600">Finder</text><text x="115" y="34" font-size="18" fill="#69766e">File　 Edit　 View</text>
+<rect x="853" y="5" width="206" height="44" rx="8" fill="#dce9e1"/>
+<path d="M877 24v10m7-16v22m7-29v36m7-29v22m7-16v10" stroke="#286b50" stroke-width="3" stroke-linecap="round"/>
+<text x="919" y="34" font-size="20" font-weight="600">LocalScribe</text><text x="1102" y="34" font-size="18">10:24</text>
+<g filter="url(#shadow)">
+<path d="M930 82l14-16 14 16" fill="#fbfcfb"/>
+<rect x="628" y="80" width="514" height="790" rx="20" fill="#fbfcfb" stroke="#cedbd2"/>
+</g>
+<path d="M652 109v13m7-19v25m7-32v39m7-32v25m7-19v13" stroke="#2f705e" stroke-width="3" stroke-linecap="round"/>
+<text x="697" y="122" font-size="22" font-weight="650">LocalScribe</text><text x="1094" y="122" font-size="25" fill="#7e8a82">×</text>
+<rect x="650" y="150" width="470" height="196" rx="15" fill="#edf4ef" stroke="#91b6a1" stroke-dasharray="6 5"/>
+<g fill="none" stroke="#2f705e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M872 182h18l12 12v25h-30zM890 182v12h12M885 202v28m-7-7 7 7 7-7"/></g>
+<text x="885" y="266" text-anchor="middle" font-size="25" font-weight="600">Drop a recording</text>
+<text x="885" y="294" text-anchor="middle" font-size="17" fill="#5a6f61">Transcription starts automatically</text>
+<text x="885" y="323" text-anchor="middle" font-size="13" fill="#738078">AAC · MP3 · WAV · M4A · MP4 · MOV · WebM</text>
+<circle cx="663" cy="374" r="7" fill="#2f705e"/><text x="682" y="380" font-size="17">Speaker recognition always on</text>
+<rect x="650" y="402" width="470" height="44" rx="10" fill="#eff2ef"/><text x="665" y="430" font-size="18" fill="#6c776f">›</text><text x="688" y="430" font-size="16">Settings</text>
+<text x="650" y="484" font-size="19" font-weight="600">Transcript</text><text x="1024" y="484" font-size="15" fill="#2f705e">TXT　MD</text>
+<rect x="650" y="500" width="470" height="288" rx="10" fill="white" stroke="#dce2dd"/>
+<g font-size="17">
+<text x="669" y="531" font-weight="600" fill="#2f705e">Speaker 1</text><text x="669" y="558">Let’s review the launch plan.</text>
+<text x="669" y="605" font-weight="600" fill="#2f705e">Speaker 2</text><text x="669" y="632">The build is ready for testing.</text>
+<text x="669" y="679" font-weight="600" fill="#2f705e">Speaker 3</text><text x="669" y="706">I’ll check the installation flow.</text>
+</g>
+<text x="669" y="763" font-size="13" fill="#869087">Example transcript</text>
+<circle cx="658" cy="819" r="4" fill="#3a8c66"/><text x="670" y="825" font-size="14" fill="#617267">Ready · meeting.wav</text><text x="1090" y="825" font-size="22" fill="#718078">···</text>
+<text x="78" y="295" font-size="16" font-weight="600" letter-spacing="3" fill="#51755e">NATIVE ON MACOS</text>
+<text x="78" y="365" font-size="48" font-weight="650" letter-spacing="-1.5">One small panel.</text>
+<text x="78" y="422" font-size="48" font-weight="650" letter-spacing="-1.5">Every voice, labeled.</text>
+<text x="78" y="476" font-size="23" fill="#5b7262">Open from the menu bar.</text><text x="78" y="511" font-size="23" fill="#5b7262">Drop audio. Stay local.</text>
+<rect x="78" y="560" width="286" height="42" rx="21" fill="#f5f9f6" stroke="#b7cebd"/><text x="221" y="587" text-anchor="middle" font-size="16" fill="#35664b">Automatic speaker count</text>
+<text x="78" y="852" font-size="14" fill="#728275">Interface illustration · LocalScribe 0.3.0</text>
+</g></svg>

@@ -6,12 +6,15 @@ import { ModelsModal } from "./components/ModelsModal";
 import { SpeakerModelsModal } from "./components/SpeakerModelsModal";
 import {
   cancelTranscription,
+  claimIntegrationRequest,
+  completeIntegrationRequest,
   deleteModel,
   deleteSpeakerModel,
   downloadModel,
   downloadSpeakerModel,
   errorMessage,
   exportTranscript,
+  failIntegrationRequest,
   listModels,
   listSpeakerModels,
   selectCustomModel,
@@ -23,12 +26,14 @@ import { filterLiveTranscriptSegments, formatTranscriptSegments } from "./lib/tr
 import type {
   BenchmarkPhase,
   DownloadProgress,
+  IntegrationRequest,
   ModelInfo,
   SpeakerModelInfo,
   TranscriptionBenchmark,
   TranscriptSegment,
   TranscriptionError,
   TranscriptionProgress,
+  TranscriptionResult,
   TranscriptionSegmentEvent
 } from "./types/localscribe";
 
@@ -57,6 +62,13 @@ const languages = [
 
 const translations: Record<InterfaceLanguage, Record<string, string>> = {
   en: {
+    autoStartHint: "Transcription starts automatically",
+    alwaysSpeakers: "Speakers are always identified",
+    speakerLimit: "Neural diarization · automatic speaker count",
+    unsupportedFile: "Choose an audio or video file: aac, mp3, wav, m4a, mp4, mov, webm.",
+    oneFileOnly: "Drop one recording at a time.",
+    retry: "Try again",
+    transcriptPlaceholder: "Your transcript with speaker labels will appear here.",
     appName: "LocalScribe",
     appDescription: "Local audio and video transcription. No cloud upload.",
     stateLoading: "Loading",
@@ -79,8 +91,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     settingsSummary: "Settings",
     manageModels: "Manage",
     speakersLabel: "Identify speakers",
-    speakerModelLabel: "Speaker model",
-    speakersHint: "Automatically detect different speakers (max 2)",
+    speakersHint: "Automatically detect different speakers",
     speakersOn: "On",
     speakersOff: "Off",
     experimentalWarning: "⚠️ Experimental feature",
@@ -106,7 +117,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     transcript: "Transcript",
     segments: "segments",
     editableResult: "Editable result",
-    copyAll: "Copy All",
+    copyAll: "Copy",
     saveTxt: "Save TXT",
     saveMd: "Save MD",
     noModelError: "No local model is installed. Open Models and download Turbo Q5 or choose a custom .bin file.",
@@ -114,6 +125,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     copiedToClipboard: "Copied to clipboard!",
     noTranscriptToCopy: "There is no transcript to copy.",
     noTranscriptToExport: "There is no transcript to export.",
+    expressImportComplete: "eXpress meeting transcribed",
     benchmarkTitle: "Performance",
     benchmarkTotal: "Total",
     benchmarkAudio: "Audio",
@@ -144,6 +156,13 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     close: "×"
   },
   ru: {
+    autoStartHint: "Расшифровка начнётся автоматически",
+    alwaysSpeakers: "Спикеры определяются всегда",
+    speakerLimit: "Нейросеть · число голосов автоматически",
+    unsupportedFile: "Выберите аудио или видео: aac, mp3, wav, m4a, mp4, mov, webm.",
+    oneFileOnly: "Перетаскивайте по одной записи.",
+    retry: "Повторить",
+    transcriptPlaceholder: "Здесь появится текст со спикерами.",
     appName: "LocalScribe",
     appDescription: "Локальная транскрибация аудио и видео. Без загрузки в облако.",
     stateLoading: "Загрузка",
@@ -153,7 +172,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     stateTranscribing: "Транскрибация",
     stateCompleted: "Завершено",
     stateError: "Ошибка",
-    dropZoneDefault: "Перетащите аудио/видео сюда",
+    dropZoneDefault: "Перетащите запись",
     dropZoneDragging: "Отпустите файл",
     dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm",
     modelLabel: "Модель",
@@ -167,8 +186,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     manageModels: "Управление",
     settingsButton: "Настройки",
     speakersLabel: "Определять спикеров",
-    speakerModelLabel: "Модель спикеров",
-    speakersHint: "Автоматически определять разных говорящих (макс 2)",
+    speakersHint: "Автоматически определять разных говорящих",
     speakersOn: "Вкл",
     speakersOff: "Выкл",
     experimentalWarning: "⚠️ Экспериментальная функция",
@@ -194,7 +212,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     transcript: "Транскрипт",
     segments: "сегментов",
     editableResult: "Редактируемый результат",
-    copyAll: "Копировать всё",
+    copyAll: "Копировать",
     saveTxt: "Сохранить TXT",
     saveMd: "Сохранить MD",
     noModelError: "Нет локальной модели. Откройте Модели и скачайте Turbo Q5 или выберите кастомный .bin файл.",
@@ -202,6 +220,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     copiedToClipboard: "Скопировано в буфер!",
     noTranscriptToCopy: "Нет транскрипта для копирования.",
     noTranscriptToExport: "Нет транскрипта для экспорта.",
+    expressImportComplete: "Встреча eXpress расшифрована",
     benchmarkTitle: "Производительность",
     benchmarkTotal: "Всего",
     benchmarkAudio: "Аудио",
@@ -268,10 +287,9 @@ function App() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [speakerModels, setSpeakerModels] = useState<SpeakerModelInfo[]>([]);
   const [selectedModelId, setSelectedModelId] = useState("large-v3-turbo-q5_0");
-  const [selectedSpeakerModelId, setSelectedSpeakerModelId] = useState("speaker-lite");
-  const [speakerMode, setSpeakerMode] = useState<"off" | "auto">("off");
   const [engine, setEngine] = useState<"auto" | "metal" | "cpu">("auto");
   const [filePath, setFilePath] = useState("");
+  const [pendingFilePath, setPendingFilePath] = useState<string | null>(null);
   const [language, setLanguage] = useState(() => detectTranscriptionLanguage());
   const [decodingPreset, setDecodingPreset] = useState<"balanced" | "accurate">("balanced");
   const [initialPrompt, setInitialPrompt] = useState("");
@@ -281,6 +299,9 @@ function App() {
   const [transcript, setTranscript] = useState("");
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const liveSegmentsRef = useRef<TranscriptSegment[]>([]);
+  const integrationBusyRef = useRef(false);
+  const [checkingIntegration, setCheckingIntegration] = useState(false);
+  const transcriptionBusyRef = useRef(false);
   const [benchmark, setBenchmark] = useState<TranscriptionBenchmark | null>(null);
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState("");
@@ -295,7 +316,7 @@ function App() {
   const [speakerModelsOpen, setSpeakerModelsOpen] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [dragState, setDragState] = useState<DragState>({ isDragging: false, dragCounter: 0 });
-  const [settingsOpen, setSettingsOpen] = useState(() => window.matchMedia("(min-width: 760px)").matches);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [interfaceLanguage, setInterfaceLanguage] = useState<InterfaceLanguage>(() => {
     // Try to load from localStorage first, otherwise detect from system
     const saved = localStorage.getItem('interfaceLanguage') as InterfaceLanguage | null;
@@ -307,11 +328,9 @@ function App() {
     [models, selectedModelId]
   );
   const installedModels = models.filter((model) => model.installed);
-  const installedSpeakerModels = speakerModels.filter((model) => model.installed);
   const hasUsableModel = Boolean(selectedModel?.installed && selectedModel.path);
   const transcribing = Boolean(currentJobId);
   const downloading = Boolean(busyModelId);
-  const downloadingSpeakerModel = Boolean(busySpeakerModelId);
 
   // Helper function for translations
   const tx = (key: string) => t(interfaceLanguage, key);
@@ -335,21 +354,10 @@ function App() {
   }, [interfaceLanguage]);
 
   useEffect(() => {
-    const query = window.matchMedia("(min-width: 760px)");
-    const syncSettingsPanel = () => {
-      if (query.matches) {
-        setSettingsOpen(true);
-      }
-    };
-
-    syncSettingsPanel();
-    query.addEventListener("change", syncSettingsPanel);
-    return () => query.removeEventListener("change", syncSettingsPanel);
+    void refreshModels();
   }, []);
 
   useEffect(() => {
-    refreshModels();
-
     // Keyboard shortcuts
     const handleKeyPress = (e: KeyboardEvent) => {
       // Cmd/Ctrl + O: Open file
@@ -395,79 +403,161 @@ function App() {
       return;
     }
 
+    let disposed = false;
     const unlisteners: Array<() => void> = [];
+    const registerUnlisten = (unlisten: () => void) => {
+      if (disposed) unlisten();
+      else unlisteners.push(unlisten);
+    };
+    const onListenError = (caught: unknown) => {
+      if (!disposed) setError(errorMessage(caught));
+    };
 
     listen<DownloadProgress>("model-download-progress", (event) => {
+      if (disposed) return;
       setDownloadProgress((previous) => ({
         ...previous,
         [event.payload.modelId]: event.payload
       }));
-    }).then((unlisten) => unlisteners.push(unlisten));
+    }).then(registerUnlisten).catch(onListenError);
 
     listen<DownloadProgress>("speaker-model-download-progress", (event) => {
+      if (disposed) return;
       setSpeakerDownloadProgress((previous) => ({
         ...previous,
         [event.payload.modelId]: event.payload
       }));
-    }).then((unlisten) => unlisteners.push(unlisten));
+    }).then(registerUnlisten).catch(onListenError);
 
     listen<TranscriptionProgress>("transcription-progress", (event) => {
-      if (currentJobId && event.payload.jobId !== currentJobId) {
+      if (disposed || event.payload.jobId !== currentJobId) {
         return;
       }
       setProgress(event.payload.progress);
       setPhase(event.payload.phase);
-    }).then((unlisten) => unlisteners.push(unlisten));
+    }).then(registerUnlisten).catch(onListenError);
 
     listen<TranscriptionSegmentEvent>("transcription-segment", (event) => {
-      if (currentJobId && event.payload.jobId !== currentJobId) {
+      if (disposed || event.payload.jobId !== currentJobId) {
         return;
       }
       const segment = event.payload.segment;
-      const filteredSegments = filterLiveTranscriptSegments(
-        [...liveSegmentsRef.current.filter((item) => item.index !== segment.index), segment]
-      );
-      liveSegmentsRef.current = filteredSegments;
+      liveSegmentsRef.current = [
+        ...liveSegmentsRef.current.filter((item) => item.index !== segment.index), segment
+      ];
+      const filteredSegments = filterLiveTranscriptSegments(liveSegmentsRef.current);
       setSegments(filteredSegments);
       setTranscript(formatTranscriptSegments(filteredSegments));
-    }).then((unlisten) => unlisteners.push(unlisten));
+    }).then(registerUnlisten).catch(onListenError);
 
     listen<TranscriptionError>("transcription-error", (event) => {
-      if (currentJobId && event.payload.jobId !== currentJobId) {
+      if (disposed || event.payload.jobId !== currentJobId) {
         return;
       }
       setError(event.payload.message);
       setCurrentJobId(null);
       setPhase("error");
-    }).then((unlisten) => unlisteners.push(unlisten));
+    }).then(registerUnlisten).catch(onListenError);
 
     return () => {
+      disposed = true;
       unlisteners.forEach((unlisten) => unlisten());
     };
   }, [currentJobId]);
+
+  const acceptInputRef = useRef(acceptInputFile);
+  acceptInputRef.current = acceptInputFile;
 
   useEffect(() => {
     if (!isTauriRuntime()) {
       return;
     }
 
+    let disposed = false;
     let unlisten: (() => void) | undefined;
 
     getCurrentWindow()
       .onDragDropEvent((event) => {
+        if (disposed) return;
         const payload = event.payload as { type: string; paths?: string[] };
+        setDragState({ isDragging: payload.type === "enter" || payload.type === "over", dragCounter: 0 });
         if (payload.type === "drop" && payload.paths?.[0]) {
-          setFilePath(payload.paths[0]);
-          setError("");
-          setDragState({ isDragging: false, dragCounter: 0 });
+          if (payload.paths.length !== 1) {
+            acceptInputRef.current('');
+            return;
+          }
+          acceptInputRef.current(payload.paths[0]);
         }
       })
       .then((unsubscribe) => {
-        unlisten = unsubscribe;
+        if (disposed) unsubscribe();
+        else unlisten = unsubscribe;
+      }).catch((caught) => {
+        if (!disposed) setError(errorMessage(caught));
       });
 
-    return () => unlisten?.();
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
   }, []);
+
+  useEffect(() => {
+    if (!pendingFilePath || initializing || downloading || checkingIntegration || transcribing || !hasUsableModel || transcriptionBusyRef.current) return;
+    setPendingFilePath(null);
+    void startTranscription(pendingFilePath);
+  }, [pendingFilePath, initializing, downloading, checkingIntegration, transcribing, hasUsableModel, selectedModel?.path]);
+
+  useEffect(() => {
+    if (!isTauriRuntime() || initializing || transcribing || pendingFilePath || !hasUsableModel) {
+      return;
+    }
+
+    let disposed = false;
+    const poll = async () => {
+      if (disposed || integrationBusyRef.current || transcriptionBusyRef.current) {
+        return;
+      }
+
+      integrationBusyRef.current = true;
+      setCheckingIntegration(true);
+      try {
+        const request = await claimIntegrationRequest();
+        if (request && !disposed) {
+          await startIntegrationTranscription(request);
+        }
+      } catch (caught) {
+        if (!disposed) {
+          setError(errorMessage(caught));
+        }
+      } finally {
+        integrationBusyRef.current = false;
+        setCheckingIntegration(false);
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2000);
+    return () => {
+      disposed = true;
+      window.clearInterval(timer);
+    };
+  }, [
+    initializing,
+    pendingFilePath,
+    transcribing,
+    hasUsableModel,
+    selectedModel?.id,
+    selectedModel?.path,
+    engine,
+    language,
+    decodingPreset,
+    initialPrompt,
+    timestamps,
+    threadsMode,
+    threads,
+    interfaceLanguage
+  ]);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -504,13 +594,29 @@ function App() {
       setModels(nextModels);
       setSpeakerModels(nextSpeakerModels);
       setSelectedModelId((current) => chooseSelectedModel(nextModels, current));
-      setSelectedSpeakerModelId((current) => chooseSelectedSpeakerModel(nextSpeakerModels, current));
       setError("");
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
       setInitializing(false);
     }
+  }
+
+  function acceptInputFile(path: string) {
+    if (transcriptionBusyRef.current) return;
+    if (!path) {
+      setError(tx('oneFileOnly'));
+      return;
+    }
+    if (!/\.(aac|mp3|wav|m4a|mp4|mov|webm)$/i.test(path)) {
+      setError(tx('unsupportedFile'));
+      return;
+    }
+    setFilePath(path);
+    setPendingFilePath(path);
+    setError(hasUsableModel ? "" : tx('noModelError'));
+    setNotice("");
+    if (!hasUsableModel && !initializing) setModelsOpen(true);
   }
 
   async function chooseInputFile() {
@@ -524,8 +630,7 @@ function App() {
       ]
     });
     if (typeof selected === "string") {
-      setFilePath(selected);
-      setError("");
+      acceptInputFile(selected);
     }
   }
 
@@ -580,8 +685,7 @@ function App() {
     setBusySpeakerModelId(modelId);
     setError("");
     try {
-      const model = await downloadSpeakerModel(modelId);
-      setSelectedSpeakerModelId(model.id);
+      await downloadSpeakerModel(modelId);
       await refreshModels();
     } catch (caught) {
       setError(errorMessage(caught));
@@ -601,10 +705,6 @@ function App() {
     try {
       const nextModels = await deleteSpeakerModel(modelId);
       setSpeakerModels(nextModels);
-      setSelectedSpeakerModelId((current) => chooseSelectedSpeakerModel(nextModels, current));
-      if (!nextModels.some((model) => model.installed)) {
-        setSpeakerMode("off");
-      }
     } catch (caught) {
       setError(errorMessage(caught));
     } finally {
@@ -616,8 +716,7 @@ function App() {
     setBusySpeakerModelId("custom-speaker");
     setError("");
     try {
-      const model = await selectCustomSpeakerModel(path);
-      setSelectedSpeakerModelId(model.id);
+      await selectCustomSpeakerModel(path);
       await refreshModels();
     } catch (caught) {
       setError(errorMessage(caught));
@@ -626,17 +725,22 @@ function App() {
     }
   }
 
-  async function startTranscription() {
-    if (!filePath || !selectedModel?.path) {
+  async function startTranscription(inputPath = filePath) {
+    if (!inputPath || !selectedModel?.path) {
       setError("Choose an input file and an installed model.");
       return;
     }
+    if (transcriptionBusyRef.current) {
+      return;
+    }
+    transcriptionBusyRef.current = true;
 
     const jobId = crypto.randomUUID();
     setCurrentJobId(jobId);
     setProgress(0);
     setPhase("starting");
     setError("");
+    setNotice("");
     setTranscript("");
     setSegments([]);
     liveSegmentsRef.current = [];
@@ -645,12 +749,11 @@ function App() {
     try {
       const result = await transcribeFile({
         jobId,
-        filePath,
+        filePath: inputPath,
         modelId: selectedModel.id,
         modelPath: selectedModel.path,
         engine,
-        speakerMode,
-        speakerModelId: speakerMode === "auto" ? selectedSpeakerModelId : undefined,
+        speakerMode: "auto",
         language,
         decodingPreset,
         initialPrompt: initialPrompt.trim() || undefined,
@@ -667,6 +770,62 @@ function App() {
       setError(errorMessage(caught));
       setPhase("error");
     } finally {
+      transcriptionBusyRef.current = false;
+      setCurrentJobId(null);
+    }
+  }
+
+  async function startIntegrationTranscription(request: IntegrationRequest) {
+    if (!selectedModel?.path || transcriptionBusyRef.current) {
+      return;
+    }
+    transcriptionBusyRef.current = true;
+
+    const jobId = request.id;
+    setFilePath(request.mediaPath);
+    setCurrentJobId(jobId);
+    setProgress(0);
+    setPhase("starting");
+    setError("");
+    setNotice("");
+    setTranscript("");
+    setSegments([]);
+    liveSegmentsRef.current = [];
+    setBenchmark(null);
+
+    try {
+      const result: TranscriptionResult = await transcribeFile({
+        jobId,
+        filePath: request.mediaPath,
+        modelId: selectedModel.id,
+        modelPath: selectedModel.path,
+        engine,
+        speakerMode: "auto",
+        language: request.options?.language ?? language,
+        decodingPreset: request.options?.decodingPreset ?? decodingPreset,
+        initialPrompt: initialPrompt.trim() || undefined,
+        timestamps: request.options?.timestamps ?? timestamps,
+        threads: threadsMode === "manual" ? threads : undefined
+      });
+      const completion = await completeIntegrationRequest(jobId, result);
+      liveSegmentsRef.current = result.segments;
+      setTranscript(result.text);
+      setSegments(result.segments);
+      setBenchmark(result.benchmark ?? null);
+      setProgress(100);
+      setPhase("completed");
+      setNotice(`${tx('expressImportComplete')}: ${completion.transcriptPath}`);
+    } catch (caught) {
+      const message = errorMessage(caught);
+      setError(message);
+      setPhase("error");
+      try {
+        await failIntegrationRequest(jobId, message);
+      } catch (failError) {
+        setError(`${message} ${errorMessage(failError)}`);
+      }
+    } finally {
+      transcriptionBusyRef.current = false;
       setCurrentJobId(null);
     }
   }
@@ -735,7 +894,7 @@ function App() {
       <header className="topBar">
         <div>
           <h1>{tx('appName')}</h1>
-          <p>{tx('appDescription')}</p>
+
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
@@ -752,10 +911,6 @@ function App() {
 
       <section className="workspace">
         <aside className="controlPane" aria-label="Transcription controls">
-          <div className="keyboard-hint">
-            <kbd>⌘</kbd> + <kbd>O</kbd> {tx('openFile')}
-          </div>
-
           <button
             className={`dropZone ${dragState.isDragging ? 'dragging' : ''}`}
             type="button"
@@ -767,9 +922,18 @@ function App() {
             onDrop={handleDrop}
             title={filePath ? tx('selectFileDifferent') : tx('selectFileOrDrag')}
           >
-            <span>{filePath ? fileName(filePath) : (dragState.isDragging ? tx('dropZoneDragging') : tx('dropZoneDefault'))}</span>
-            <small>{filePath || tx('dropZoneFormats')}</small>
+            <svg className="uploadIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+              <path d="M12 16V3m-5 5 5-5 5 5M4 15v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5" />
+            </svg>
+            <span>{dragState.isDragging ? tx('dropZoneDragging') : filePath ? fileName(filePath) : tx('dropZoneDefault')}</span>
+            <small>{transcribing ? tx('transcribingHint') : tx('autoStartHint')}</small>
+            <small>{tx('dropZoneFormats')}</small>
           </button>
+
+          <div className="speakerStatus">
+            <span>{tx('alwaysSpeakers')}</span>
+            <small>{tx('speakerLimit')}</small>
+          </div>
 
           <details
             className="settingsDisclosure"
@@ -781,6 +945,9 @@ function App() {
               <strong>{selectedModel?.name ?? tx('selectModelFirst')}</strong>
             </summary>
             <div className="settingsBody">
+              <button type="button" className="settingsButton wideField" disabled={transcribing} onClick={() => setSpeakerModelsOpen(true)}>
+                {tx('manageSpeakerModelsTitle')}
+              </button>
               <label className="field">
                 <span className="hint" data-hint={tx('modelHint')}>
                   {tx('modelLabel')}
@@ -824,65 +991,6 @@ function App() {
                   <option value="cpu">{tx('engineCpu')}</option>
                 </select>
               </label>
-
-              <label className="field">
-                <div className="speakerField">
-                  <span className="hint" data-hint={tx('speakersHint')}>
-                    {tx('speakersLabel')}
-                  </span>
-                  <button
-                    type="button"
-                    className="settingsButton"
-                    onClick={() => setSpeakerModelsOpen(true)}
-                    disabled={transcribing}
-                    title={tx('manageSpeakerModelsTitle')}
-                  >
-                    {tx('settingsButton')}
-                  </button>
-                </div>
-                <div className="speakerSwitch">
-                  <button
-                    type="button"
-                    className={`switch ${speakerMode === "auto" ? "active" : ""}`}
-                    onClick={() => {
-                      if (speakerMode === "off" && installedSpeakerModels.length > 0) {
-                        setSpeakerMode("auto");
-                      } else if (speakerMode === "auto") {
-                        setSpeakerMode("off");
-                      }
-                    }}
-                    disabled={transcribing || (speakerMode === "off" && !installedSpeakerModels.length)}
-                    title={speakerMode === "auto" ? "Click to disable" : "Click to enable"}
-                  >
-                    <span className="slider"></span>
-                  </button>
-                  <span className="switchLabel">
-                    {speakerMode === "auto" ? tx('speakersOn') : tx('speakersOff')}
-                  </span>
-                </div>
-                {speakerMode === "auto" && !transcribing && (
-                  <small className="field-hint">
-                    {tx('experimentalWarning')}
-                  </small>
-                )}
-              </label>
-
-              {speakerMode === "auto" ? (
-                <label className="field">
-                  <span>{tx('speakerModelLabel')}</span>
-                  <select
-                    value={selectedSpeakerModelId}
-                    onChange={(event) => setSelectedSpeakerModelId(event.target.value)}
-                    disabled={transcribing || downloadingSpeakerModel}
-                  >
-                    {speakerModels.map((model) => (
-                      <option value={model.id} key={model.id} disabled={!model.installed}>
-                        {model.name} {model.installed ? "" : `(${tx('notInstalled')})`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : null}
 
               <label className="field">
                 <span>{tx('languageLabel')}</span>
@@ -966,22 +1074,18 @@ function App() {
             </div>
           </details>
 
-          {transcribing ? (
-            <div className="transcribing-hint">
-              {tx('transcribingHint')}
-            </div>
-          ) : (
+          {filePath && !transcribing && !pendingFilePath && phase === "error" ? (
             <button
               className="primary"
               type="button"
-              onClick={startTranscription}
+              onClick={() => void startTranscription()}
               disabled={!filePath || !hasUsableModel || initializing || downloading}
             >
-              {tx('transcribe')}
+              {tx('retry')}
             </button>
-          )}
+          ) : null}
 
-          <div className="progressBlock" aria-live="polite">
+          {transcribing ? <div className="progressBlock" aria-live="polite">
             <div className="progressMeta">
               <span className={`phaseLabel ${uiState}`}>
                 {phase || tx(`state${uiState.charAt(0).toUpperCase() + uiState.slice(1)}`)}
@@ -1004,7 +1108,7 @@ function App() {
                 </button>
               </div>
             )}
-          </div>
+          </div> : null}
 
           {benchmark ? (
             <details className="benchmarkBox" aria-label={tx('benchmarkTitle')}>
@@ -1036,11 +1140,6 @@ function App() {
               {tx('noModelError')}
             </div>
           ) : null}
-          {speakerMode === "auto" ? (
-            <div className="emptyBox">
-              {tx('speakerInfo')}
-            </div>
-          ) : null}
         </aside>
 
         <section className="editorPane" aria-label="Transcript editor">
@@ -1059,10 +1158,10 @@ function App() {
                 {tx('copyAll')}
               </button>
               <button type="button" onClick={() => saveTranscript("txt")} disabled={!transcript}>
-                {tx('saveTxt')}
+                TXT
               </button>
               <button type="button" onClick={() => saveTranscript("md")} disabled={!transcript}>
-                {tx('saveMd')}
+                MD
               </button>
             </div>
           </div>
@@ -1070,8 +1169,13 @@ function App() {
           <textarea
             className="transcriptEditor"
             value={transcript}
-            onChange={(event) => setTranscript(event.target.value)}
-            placeholder="Transcript will appear here."
+            readOnly={transcribing}
+            onChange={(event) => {
+              setTranscript(event.target.value);
+              setSegments([]);
+            }}
+            aria-label={tx('transcript')}
+            placeholder={tx('transcriptPlaceholder')}
           />
         </section>
       </section>
@@ -1097,15 +1201,9 @@ function App() {
       {speakerModelsOpen ? (
         <SpeakerModelsModal
           models={speakerModels}
-          selectedModelId={selectedSpeakerModelId}
           downloadProgress={speakerDownloadProgress}
           busyModelId={busySpeakerModelId}
           onClose={() => setSpeakerModelsOpen(false)}
-          onUse={(model) => {
-            setSelectedSpeakerModelId(model.id);
-            setSpeakerModelsOpen(false);
-            setSpeakerMode("auto");
-          }}
           onDownload={handleSpeakerDownload}
           onDelete={handleSpeakerDelete}
           onChooseCustom={handleCustomSpeakerModel}
@@ -1116,17 +1214,6 @@ function App() {
 }
 
 function chooseSelectedModel(models: ModelInfo[], current: string): string {
-  if (models.some((model) => model.id === current && model.installed)) {
-    return current;
-  }
-  return (
-    models.find((model) => model.installed && model.recommended)?.id ??
-    models.find((model) => model.installed)?.id ??
-    current
-  );
-}
-
-function chooseSelectedSpeakerModel(models: SpeakerModelInfo[], current: string): string {
   if (models.some((model) => model.id === current && model.installed)) {
     return current;
   }
@@ -1189,25 +1276,6 @@ function benchmarkPhaseLabel(phase: string, language: InterfaceLanguage): string
   };
 
   return labels[language][phase] ?? phase;
-}
-
-function stateLabel(state: UiState): string {
-  switch (state) {
-    case "loading":
-      return "Loading";
-    case "no-model":
-      return "No model";
-    case "ready":
-      return "Ready";
-    case "downloading":
-      return "Downloading";
-    case "transcribing":
-      return "Transcribing";
-    case "completed":
-      return "Completed";
-    case "error":
-      return "Error";
-  }
 }
 
 export default App;

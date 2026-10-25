@@ -7,7 +7,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 #[derive(Debug, Clone, Copy)]
 pub struct SpeakerModelFileSpec {
@@ -33,6 +33,22 @@ pub struct SpeakerModelSpec {
 }
 
 pub const CUSTOM_SPEAKER_MODEL_ID: &str = "custom-speaker";
+pub const NEURAL_SPEAKER_MODEL_ID: &str = "speaker-neural";
+
+const NEURAL_FILES: &[SpeakerModelFileSpec] = &[
+    SpeakerModelFileSpec {
+        id: "pyannote-segmentation-3", file_name: "segmentation.onnx", size_label: "6 MB",
+        size_bytes: 5_992_913, min_bytes: 5_992_913,
+        url: "https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/model.onnx",
+        sha256: Some("220ad67ca923bef2fa91f2390c786097bf305bceb5e261d4af67b38e938e1079"),
+    },
+    SpeakerModelFileSpec {
+        id: "eres2net", file_name: "embedding.onnx", size_label: "40 MB",
+        size_bytes: 39_593_761, min_bytes: 39_593_761,
+        url: "https://huggingface.co/csukuangfj/speaker-embedding-models/resolve/0743f301363dec56491a490f6d6cbc9d67f9a3bf/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx",
+        sha256: Some("1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b"),
+    },
+];
 
 const SILERO_VAD: SpeakerModelFileSpec = SpeakerModelFileSpec {
     id: "silero-vad",
@@ -81,6 +97,16 @@ const SPEAKER_TITANET_FILES: &[SpeakerModelFileSpec] = &[SILERO_VAD, TITANET_LAR
 
 pub const SPEAKER_MODEL_SPECS: &[SpeakerModelSpec] = &[
     SpeakerModelSpec {
+        id: NEURAL_SPEAKER_MODEL_ID,
+        name: "Pyannote + 3D-Speaker",
+        size_label: "46 MB",
+        size_bytes: 45_586_674,
+        recommended: true,
+        quality_label: "Automatic speaker count",
+        runtime_label: "Local ONNX neural diarization",
+        files: NEURAL_FILES,
+    },
+    SpeakerModelSpec {
         id: "speaker-lite",
         name: "Speaker Lite",
         size_label: "~29 MB",
@@ -113,10 +139,7 @@ pub const SPEAKER_MODEL_SPECS: &[SpeakerModelSpec] = &[
 ];
 
 pub fn speaker_models_dir(app: &AppHandle) -> AppResult<PathBuf> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|error| AppError::Config(error.to_string()))?
+    let dir = crate::storage::data_dir(app)?
         .join("models")
         .join("diarization");
     fs::create_dir_all(&dir)?;
@@ -252,20 +275,15 @@ pub fn select_custom_speaker_model(
 
     let mut stored_settings = settings::load(app)?;
     stored_settings.custom_speaker_model_path = Some(display_path(&path));
-    stored_settings.default_speaker_model_id = Some(CUSTOM_SPEAKER_MODEL_ID.to_string());
     settings::save(app, &stored_settings)?;
 
     custom_speaker_model_info(stored_settings.custom_speaker_model_path.as_deref())
 }
 
 pub fn delete_speaker_model(app: &AppHandle, model_id: &str) -> AppResult<Vec<SpeakerModelInfo>> {
-    let mut stored_settings = settings::load(app)?;
-
     if model_id == CUSTOM_SPEAKER_MODEL_ID {
+        let mut stored_settings = settings::load(app)?;
         stored_settings.custom_speaker_model_path = None;
-        if stored_settings.default_speaker_model_id.as_deref() == Some(CUSTOM_SPEAKER_MODEL_ID) {
-            stored_settings.default_speaker_model_id = None;
-        }
         settings::save(app, &stored_settings)?;
         return list_speaker_models(app);
     }
@@ -276,27 +294,30 @@ pub fn delete_speaker_model(app: &AppHandle, model_id: &str) -> AppResult<Vec<Sp
         fs::remove_dir_all(dir)?;
     }
 
-    if stored_settings.default_speaker_model_id.as_deref() == Some(model_id) {
-        stored_settings.default_speaker_model_id = None;
-        settings::save(app, &stored_settings)?;
-    }
-
     list_speaker_models(app)
-}
-
-pub fn set_default_speaker_model_if_empty(app: &AppHandle, model_id: &str) -> AppResult<()> {
-    let mut stored_settings = settings::load(app)?;
-    if stored_settings.default_speaker_model_id.is_none() {
-        stored_settings.default_speaker_model_id = Some(model_id.to_string());
-        settings::save(app, &stored_settings)?;
-    }
-    Ok(())
 }
 
 pub fn validate_downloaded_speaker_file(path: &Path, file: &SpeakerModelFileSpec) -> AppResult<()> {
     let size = fs::metadata(path)?.len();
     if size < file.min_bytes {
         return Err(AppError::CorruptModel);
+    }
+    if let Some(expected) = file.sha256 {
+        use sha2::{Digest, Sha256};
+        use std::io::Read;
+        let mut input = fs::File::open(path)?;
+        let mut hash = Sha256::new();
+        let mut buffer = [0; 65536];
+        loop {
+            let count = input.read(&mut buffer)?;
+            if count == 0 {
+                break;
+            }
+            hash.update(&buffer[..count]);
+        }
+        if format!("{:x}", hash.finalize()) != expected {
+            return Err(AppError::CorruptModel);
+        }
     }
     Ok(())
 }
@@ -326,5 +347,46 @@ fn format_bytes(bytes: u64) -> String {
         format!("{:.1} GB", bytes / GB)
     } else {
         format!("{:.0} MB", bytes / MB)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn neural_pack_has_verified_segmentation_and_embedding() {
+        let pack = spec_by_id(NEURAL_SPEAKER_MODEL_ID).unwrap();
+        assert_eq!(pack.files.len(), 2);
+        assert_eq!(
+            pack.files.iter().map(|f| f.size_bytes).sum::<u64>(),
+            pack.size_bytes
+        );
+        for file in pack.files {
+            let hash = file.sha256.unwrap();
+            assert_eq!(hash.len(), 64);
+            assert!(hash.bytes().all(|b| b.is_ascii_hexdigit()));
+        }
+    }
+    #[test]
+    fn rejects_cached_weights_with_correct_size_but_wrong_hash() {
+        let path =
+            std::env::temp_dir().join(format!("localscribe-speaker-{}.onnx", uuid::Uuid::new_v4()));
+        fs::write(&path, b"bad").unwrap();
+        let file = SpeakerModelFileSpec {
+            id: "test",
+            file_name: "test.onnx",
+            size_label: "3 B",
+            size_bytes: 3,
+            min_bytes: 3,
+            url: "https://example.invalid",
+            sha256: Some("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"),
+        };
+        assert!(matches!(
+            validate_downloaded_speaker_file(&path, &file),
+            Err(AppError::CorruptModel)
+        ));
+        fs::write(&path, b"abc").unwrap();
+        assert!(validate_downloaded_speaker_file(&path, &file).is_ok());
+        fs::remove_file(path).unwrap();
     }
 }

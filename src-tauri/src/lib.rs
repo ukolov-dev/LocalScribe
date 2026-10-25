@@ -3,17 +3,22 @@ mod diarization;
 mod downloader;
 mod errors;
 pub mod export;
+mod integration;
+mod meeting_api;
 mod models;
+mod native_worker;
 mod settings;
 mod speaker_models;
+mod storage;
 mod transcription;
+mod tray;
 pub mod types;
 
 use crate::{
     errors::{AppError, AppResult},
     types::{
-        ExportRequest, ModelInfo, SpeakerModelInfo, TranscribeOptions, TranscriptionError,
-        TranscriptionResult,
+        ExportRequest, IntegrationCompletion, IntegrationRequest, ModelInfo, SpeakerModelInfo,
+        TranscribeOptions, TranscriptionError, TranscriptionResult,
     },
 };
 use std::{
@@ -95,12 +100,35 @@ async fn transcribe_file(
 
     let app_for_task = app.clone();
     let job_id_for_task = job_id.clone();
-    let result = tauri::async_runtime::spawn_blocking(move || {
-        transcription::transcribe(app_for_task, job_id_for_task, options, cancel_flag)
-    })
-    .await
-    .map_err(|error| AppError::Unexpected(error.to_string()))
-    .and_then(|result| result);
+    let result = async {
+        let download = downloader::download_speaker_model(
+            app.clone(),
+            speaker_models::NEURAL_SPEAKER_MODEL_ID.into(),
+        );
+        app.emit(
+            "transcription-progress",
+            types::TranscriptionProgress {
+                job_id: job_id.clone(),
+                phase: "downloading-speaker-models".into(),
+                progress: 0.0,
+            },
+        )?;
+        tokio::select! {
+            model = download => { model?; },
+            _ = async {
+                while !cancel_flag.load(Ordering::Relaxed) {
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            } => return Err(AppError::Cancelled),
+        }
+        tauri::async_runtime::spawn_blocking(move || {
+            transcription::transcribe(app_for_task, job_id_for_task, options, cancel_flag)
+        })
+        .await
+        .map_err(|error| AppError::Unexpected(error.to_string()))
+        .and_then(|result| result)
+    }
+    .await;
 
     {
         let mut jobs = state
@@ -137,15 +165,57 @@ fn export_transcript(request: ExportRequest) -> AppResult<String> {
     export::export_transcript(request)
 }
 
+#[tauri::command]
+fn claim_integration_request(app: AppHandle) -> AppResult<Option<IntegrationRequest>> {
+    integration::claim_next(&app)
+}
+
+#[tauri::command]
+fn complete_integration_request(
+    app: AppHandle,
+    job_id: String,
+    result: TranscriptionResult,
+) -> AppResult<IntegrationCompletion> {
+    integration::complete(&app, &job_id, &result)
+}
+
+#[tauri::command]
+fn fail_integration_request(app: AppHandle, job_id: String, message: String) -> AppResult<()> {
+    integration::fail(&app, &job_id, &message)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    if std::env::args().nth(1).as_deref() == Some("--diarize") {
+        if let Err(error) = diarization::run_cli(&std::env::args().skip(2).collect::<Vec<_>>()) {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+        return;
+    }
+    let context = tauri::generate_context!();
+    if std::env::args().nth(1).as_deref() == Some("--native-worker") {
+        native_worker::run(context);
+        return;
+    }
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::default())
         .setup(|app| {
             models::models_dir(app.handle())?;
             speaker_models::speaker_models_dir(app.handle())?;
+            integration::initialize(app.handle())?;
+            meeting_api::start(app.handle())?;
+            tray::setup(app)?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                if let Err(error) = window.hide() {
+                    eprintln!("Cannot hide LocalScribe: {error}");
+                }
+            }
         })
         .invoke_handler(tauri::generate_handler![
             list_models,
@@ -158,9 +228,12 @@ pub fn run() {
             select_custom_speaker_model,
             transcribe_file,
             cancel_transcription,
-            export_transcript
+            export_transcript,
+            claim_integration_request,
+            complete_integration_request,
+            fail_integration_request
         ])
-        .run(tauri::generate_context!())
+        .run(context)
         .expect("error while running LocalScribe");
 }
 

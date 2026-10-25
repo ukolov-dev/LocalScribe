@@ -32,6 +32,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Test frontend
+        run: npm test
+
       - name: Prepare compile-only sidecar placeholder
         run: |
           TARGET_TRIPLE=$(rustc -vV | sed -n 's/^host: //p')
@@ -42,6 +45,9 @@ jobs:
 
       - name: Test Rust backend
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Test native SwiftUI interface
+        run: swift test --package-path macos
 
   ffmpeg-sidecar:
     name: Verify LGPL FFmpeg sidecar

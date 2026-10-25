@@ -133,4 +133,15 @@ mod tests {
         let result = format_transcript(ExportFormat::Md, "", &segments);
         assert!(result.contains("**Speaker 1**: Hello"));
     }
+    #[test]
+    fn exports_edited_text_without_stale_segments() {
+        assert_eq!(
+            format_transcript(ExportFormat::Md, "Edited words", &[]),
+            "# Transcript\n\nEdited words\n"
+        );
+        assert_eq!(
+            format_transcript(ExportFormat::Txt, "Edited words", &[]),
+            "Edited words\n"
+        );
+    }
 }

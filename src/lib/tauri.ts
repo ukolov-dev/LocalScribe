@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   ExportFormat,
+  IntegrationCompletion,
+  IntegrationRequest,
   ModelInfo,
   SpeakerModelInfo,
   TranscribeOptions,
@@ -59,6 +61,21 @@ export async function exportTranscript(params: {
   return invoke<string>("export_transcript", {
     request: params
   });
+}
+
+export async function claimIntegrationRequest(): Promise<IntegrationRequest | null> {
+  return invoke<IntegrationRequest | null>("claim_integration_request");
+}
+
+export async function completeIntegrationRequest(
+  jobId: string,
+  result: TranscriptionResult
+): Promise<IntegrationCompletion> {
+  return invoke<IntegrationCompletion>("complete_integration_request", { jobId, result });
+}
+
+export async function failIntegrationRequest(jobId: string, message: string): Promise<void> {
+  return invoke<void>("fail_integration_request", { jobId, message });
 }
 
 export function errorMessage(error: unknown): string {

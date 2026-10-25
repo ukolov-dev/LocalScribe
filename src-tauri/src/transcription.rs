@@ -31,6 +31,7 @@ const MAX_CONSECUTIVE_REPEATED_SEGMENTS: usize = 2;
 const MAX_REPEATED_LONG_SEGMENTS: usize = 2;
 const MAX_REPEATED_SHORT_SEGMENTS: usize = 8;
 const MAX_REPEATED_ACKNOWLEDGEMENTS: usize = 4;
+const DISTINCT_REPEAT_WINDOW_MS: u64 = 10_000;
 
 #[derive(Clone, Copy)]
 struct RunConfig {
@@ -53,12 +54,12 @@ struct MultilingualChunk {
 struct ChunkTranscriptionParams<'a> {
     language: String,
     decoding_preset: Option<&'a str>,
-    timestamps: bool,
     threads: Option<u32>,
     initial_prompt: Option<&'a str>,
 }
 
-struct TranscriptionCallbacks {
+struct TranscriptionCallbacks<'a> {
+    speaker_turns: &'a [crate::diarization::SpeakerTurn],
     progress_app: AppHandle,
     progress_job_id: String,
     segment_app: AppHandle,
@@ -79,9 +80,15 @@ impl RunConfig {
     }
 }
 
-impl TranscriptionCallbacks {
-    fn new(app: AppHandle, job_id: String, abort_flag: Arc<AtomicBool>) -> Self {
+impl<'a> TranscriptionCallbacks<'a> {
+    fn new(
+        app: AppHandle,
+        job_id: String,
+        abort_flag: Arc<AtomicBool>,
+        speaker_turns: &'a [crate::diarization::SpeakerTurn],
+    ) -> Self {
         Self {
+            speaker_turns,
             progress_app: app.clone(),
             progress_job_id: job_id.clone(),
             segment_app: app,
@@ -91,7 +98,7 @@ impl TranscriptionCallbacks {
     }
 }
 
-fn calculate_adaptive_chunk_size(language: &str, _total_samples: usize) -> usize {
+fn calculate_adaptive_chunk_size(language: &str) -> usize {
     match language.trim().to_ascii_lowercase().as_str() {
         "multi" | "multilingual" | "multi-quality" | "multilingual-quality" => {
             MULTILINGUAL_QUALITY_CHUNK_SECONDS
@@ -203,11 +210,22 @@ pub fn transcribe(
     check_cancelled(&cancel_flag)?;
 
     let audio_start = Instant::now();
-    let prepared_audio = audio::prepare_audio(&app, &job_id, &input_path)?;
+    let prepared_audio = audio::prepare_audio(&app, &input_path)?;
     push_benchmark_phase(
         &mut benchmark_phases,
         "audio-preparation",
         audio_start.elapsed(),
+    );
+    emit_progress(&app, &job_id, "assigning-speakers", 8.0)?;
+    let speakers_start = Instant::now();
+    let model_dir = crate::speaker_models::speaker_models_dir(&app)?
+        .join(crate::speaker_models::NEURAL_SPEAKER_MODEL_ID);
+    let speaker_turns =
+        crate::diarization::detect_speakers(&prepared_audio.wav_path, &model_dir, &cancel_flag)?;
+    push_benchmark_phase(
+        &mut benchmark_phases,
+        "speaker-diarization",
+        speakers_start.elapsed(),
     );
     emit_progress(&app, &job_id, "loading-model", 15.0)?;
 
@@ -218,6 +236,7 @@ pub fn transcribe(
             &job_id,
             &model_path,
             &prepared_audio.samples,
+            &speaker_turns,
             &options,
             Arc::clone(&cancel_flag),
             prefer_gpu,
@@ -231,6 +250,7 @@ pub fn transcribe(
                     &job_id,
                     &model_path,
                     &prepared_audio.samples,
+                    &speaker_turns,
                     &options,
                     Arc::clone(&cancel_flag),
                     false,
@@ -245,6 +265,7 @@ pub fn transcribe(
             &job_id,
             &model_path,
             &prepared_audio.samples,
+            &speaker_turns,
             &options,
             Arc::clone(&cancel_flag),
             true,
@@ -258,6 +279,7 @@ pub fn transcribe(
                     &job_id,
                     &model_path,
                     &prepared_audio.samples,
+                    &speaker_turns,
                     &options,
                     Arc::clone(&cancel_flag),
                     false,
@@ -272,6 +294,7 @@ pub fn transcribe(
             &job_id,
             &model_path,
             &prepared_audio.samples,
+            &speaker_turns,
             &options,
             Arc::clone(&cancel_flag),
             false,
@@ -283,25 +306,15 @@ pub fn transcribe(
         &job_id,
         &model_path,
         &prepared_audio.samples,
+        &speaker_turns,
         &options,
         Arc::clone(&cancel_flag),
         result,
         &mut benchmark_phases,
     );
-    audio::cleanup_temp_file(&prepared_audio.wav_path);
 
     let mut result = result?;
-    if should_assign_speakers(&options) {
-        emit_progress(&app, &job_id, "assigning-speakers", 99.0)?;
-        let speakers_start = Instant::now();
-        crate::diarization::assign_speakers(&mut result, &prepared_audio.samples);
-        push_benchmark_phase(
-            &mut benchmark_phases,
-            "speaker-assignment",
-            speakers_start.elapsed(),
-        );
-        result.text = transcript_text(&result.segments);
-    }
+    result.text = transcript_text(&result.segments);
 
     result.benchmark = Some(TranscriptionBenchmark {
         total_ms: duration_ms(total_start.elapsed()),
@@ -318,6 +331,7 @@ fn transcribe_samples(
     job_id: &str,
     model_path: &PathBuf,
     samples: &[f32],
+    speaker_turns: &[crate::diarization::SpeakerTurn],
     options: &TranscribeOptions,
     cancel_flag: Arc<AtomicBool>,
     use_gpu: bool,
@@ -335,14 +349,16 @@ fn transcribe_samples(
         load_start.elapsed(),
     );
 
-    let _estimated_segments = (samples.len() / (SAMPLE_RATE_HZ * 10)) * 3;
-    let callbacks =
-        TranscriptionCallbacks::new(app.clone(), job_id.to_string(), cancel_flag.clone());
+    let callbacks = TranscriptionCallbacks::new(
+        app.clone(),
+        job_id.to_string(),
+        cancel_flag.clone(),
+        speaker_turns,
+    );
 
     let chunk_params = ChunkTranscriptionParams {
         language: options.language.clone(),
         decoding_preset: options.decoding_preset.as_deref(),
-        timestamps: options.timestamps,
         threads: options.threads,
         initial_prompt: options.initial_prompt.as_deref(),
     };
@@ -372,6 +388,7 @@ fn transcribe_multilingual_samples(
     job_id: &str,
     model_path: &PathBuf,
     samples: &[f32],
+    speaker_turns: &[crate::diarization::SpeakerTurn],
     options: &TranscribeOptions,
     cancel_flag: Arc<AtomicBool>,
     use_gpu: bool,
@@ -390,7 +407,7 @@ fn transcribe_multilingual_samples(
         load_start.elapsed(),
     );
 
-    let chunk_size_seconds = calculate_adaptive_chunk_size(&options.language, samples.len());
+    let chunk_size_seconds = calculate_adaptive_chunk_size(&options.language);
     let overlap_seconds = multilingual_overlap_seconds(&options.language);
     let chunks = build_multilingual_chunk_plan(samples.len(), chunk_size_seconds, overlap_seconds);
     let chunk_count = chunks.len().max(1);
@@ -399,14 +416,17 @@ fn transcribe_multilingual_samples(
     let mut segments = Vec::with_capacity(estimated_segments);
     let mut next_segment_index = 0;
 
-    let callbacks =
-        TranscriptionCallbacks::new(app.clone(), job_id.to_string(), cancel_flag.clone());
+    let callbacks = TranscriptionCallbacks::new(
+        app.clone(),
+        job_id.to_string(),
+        cancel_flag.clone(),
+        speaker_turns,
+    );
     let initial_prompt_ref = options.initial_prompt.as_deref();
 
     let chunk_params = ChunkTranscriptionParams {
         language: "auto".to_string(),
         decoding_preset: options.decoding_preset.as_deref(),
-        timestamps: options.timestamps,
         threads: options.threads,
         initial_prompt: initial_prompt_ref,
     };
@@ -491,7 +511,7 @@ fn transcribe_with_context_optimized(
     context: &WhisperContext,
     samples: &[f32],
     params: &ChunkTranscriptionParams,
-    callbacks: &TranscriptionCallbacks,
+    callbacks: &TranscriptionCallbacks<'_>,
     run: RunConfig,
 ) -> AppResult<TranscriptionResult> {
     check_cancelled(&callbacks.abort_flag)?;
@@ -505,7 +525,9 @@ fn transcribe_with_context_optimized(
     full_params.set_print_timestamps(false);
     full_params.set_debug_mode(false);
     full_params.set_translate(false);
-    full_params.set_no_timestamps(!params.timestamps);
+    // Diarization needs internal token timing even when display timestamps are disabled.
+    full_params.set_no_timestamps(false);
+    full_params.set_token_timestamps(true);
     full_params.set_suppress_blank(true);
     full_params.set_suppress_nst(true);
     full_params.set_temperature(0.0);
@@ -592,6 +614,7 @@ fn transcribe_with_context_optimized(
 
     let num_segments = state.full_n_segments();
     let mut segments = Vec::with_capacity(num_segments as usize);
+    let mut aligned = HashMap::new();
 
     for index in 0..num_segments {
         if let Some(segment) = state.get_segment(index) {
@@ -600,6 +623,12 @@ fn transcribe_with_context_optimized(
                 continue;
             }
 
+            let pieces = crate::diarization::timed_tokens(
+                &segment,
+                context.token_eot(),
+                run.timestamp_offset_ms,
+            )?;
+            aligned.insert(run.segment_index_offset + index as u32, pieces);
             segments.push(TranscriptSegment {
                 index: run.segment_index_offset + index as u32,
                 start_ms: run.timestamp_offset_ms + centiseconds_to_ms(segment.start_timestamp()),
@@ -611,6 +640,26 @@ fn transcribe_with_context_optimized(
     }
 
     let segments = filter_hallucinated_segments(segments);
+    let segments = segments
+        .into_iter()
+        .flat_map(|mut segment| {
+            let pieces = aligned.remove(&segment.index).unwrap_or_default();
+            if pieces.is_empty() {
+                segment.text.insert(0, ' ');
+                vec![segment]
+            } else {
+                pieces
+            }
+        })
+        .collect();
+    let mut aligned_result = TranscriptionResult {
+        job_id: callbacks.segment_job_id.clone(),
+        text: String::new(),
+        segments,
+        benchmark: None,
+    };
+    crate::diarization::assign_speakers(&mut aligned_result, callbacks.speaker_turns);
+    let segments = aligned_result.segments;
     let text = transcript_text(&segments);
 
     if text.trim().is_empty() {
@@ -654,6 +703,7 @@ fn segment_display_text(segment: &TranscriptSegment) -> String {
 fn filter_hallucinated_segments(segments: Vec<TranscriptSegment>) -> Vec<TranscriptSegment> {
     let mut filtered = Vec::with_capacity(segments.len());
     let mut seen_counts: HashMap<String, usize> = HashMap::new();
+    let mut last_seen_starts: HashMap<String, u64> = HashMap::new();
     let mut last_key = String::new();
     let mut consecutive_count = 0;
 
@@ -679,6 +729,13 @@ fn filter_hallucinated_segments(segments: Vec<TranscriptSegment>) -> Vec<Transcr
         let seen_key = repetition_seen_key(&key);
         let seen_count = seen_counts.get(seen_key).copied().unwrap_or(0);
         let is_short = word_count <= 3;
+        let starts_in_distinct_time_window =
+            last_seen_starts
+                .get(seen_key)
+                .is_some_and(|previous_start_ms| {
+                    segment.start_ms.saturating_sub(*previous_start_ms) >= DISTINCT_REPEAT_WINDOW_MS
+                });
+        last_seen_starts.insert(seen_key.to_string(), segment.start_ms);
         let max_seen = if is_acknowledgement_key(&key) {
             MAX_REPEATED_ACKNOWLEDGEMENTS
         } else if is_short {
@@ -687,8 +744,8 @@ fn filter_hallucinated_segments(segments: Vec<TranscriptSegment>) -> Vec<Transcr
             MAX_REPEATED_LONG_SEGMENTS
         };
 
-        if consecutive_count > MAX_CONSECUTIVE_REPEATED_SEGMENTS
-            || seen_count >= max_seen
+        if (!starts_in_distinct_time_window
+            && (consecutive_count > MAX_CONSECUTIVE_REPEATED_SEGMENTS || seen_count >= max_seen))
             || has_runaway_repetition(&key)
         {
             continue;
@@ -780,14 +837,6 @@ fn has_runaway_repetition(key: &str) -> bool {
     false
 }
 
-fn should_assign_speakers(options: &TranscribeOptions) -> bool {
-    options
-        .speaker_mode
-        .as_deref()
-        .map(str::trim)
-        .is_some_and(|mode| mode.eq_ignore_ascii_case("auto"))
-}
-
 fn should_use_gpu(_model_path: &PathBuf, options: &TranscribeOptions) -> bool {
     engine_should_use_gpu(
         options.engine.as_deref(),
@@ -853,6 +902,7 @@ fn retry_auto_language_if_empty(
     job_id: &str,
     model_path: &PathBuf,
     samples: &[f32],
+    speaker_turns: &[crate::diarization::SpeakerTurn],
     options: &TranscribeOptions,
     cancel_flag: Arc<AtomicBool>,
     result: AppResult<TranscriptionResult>,
@@ -873,6 +923,7 @@ fn retry_auto_language_if_empty(
             job_id,
             model_path,
             samples,
+            speaker_turns,
             &retry_options,
             Arc::clone(&cancel_flag),
             retry_use_gpu,
@@ -886,6 +937,7 @@ fn retry_auto_language_if_empty(
                     job_id,
                     model_path,
                     samples,
+                    speaker_turns,
                     &retry_options,
                     Arc::clone(&cancel_flag),
                     false,
@@ -1041,6 +1093,33 @@ mod tests {
     }
 
     #[test]
+    fn preserves_repeated_utterances_at_distinct_times() {
+        let segments = [0_u64, 30_000, 60_000]
+            .into_iter()
+            .enumerate()
+            .map(|(index, start_ms)| TranscriptSegment {
+                index: index as u32,
+                start_ms,
+                end_ms: start_ms + 2_000,
+                text: "Повторите итоговый отчёт за месяц.".to_string(),
+                speaker: None,
+            })
+            .collect::<Vec<_>>();
+
+        let filtered = filter_hallucinated_segments(segments);
+
+        assert_eq!(
+            filtered.len(),
+            3,
+            "temporally distinct utterances must not be removed solely because their text repeats"
+        );
+        assert_eq!(
+            filtered.last().map(|segment| segment.start_ms),
+            Some(60_000)
+        );
+    }
+
+    #[test]
     fn drops_subtitle_and_music_hallucinations() {
         let segments = vec![
             segment(0, "Good morning."),
@@ -1083,14 +1162,8 @@ mod tests {
 
     #[test]
     fn multilingual_quality_uses_short_language_switch_chunks() {
-        let five_minutes = SAMPLE_RATE_HZ * 60 * 5;
-        let twenty_minutes = SAMPLE_RATE_HZ * 60 * 20;
-
-        assert_eq!(calculate_adaptive_chunk_size("multi", five_minutes), 10);
-        assert_eq!(
-            calculate_adaptive_chunk_size("multilingual-quality", twenty_minutes),
-            10
-        );
+        assert_eq!(calculate_adaptive_chunk_size("multi"), 10);
+        assert_eq!(calculate_adaptive_chunk_size("multilingual-quality"), 10);
         assert_eq!(multilingual_overlap_seconds("multi"), 1);
     }
 

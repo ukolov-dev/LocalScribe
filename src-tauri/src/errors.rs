@@ -26,6 +26,8 @@ pub enum AppError {
     Audio(String),
     #[error("Whisper engine failed: {0}")]
     Whisper(String),
+    #[error("Speaker diarization failed: {0}")]
+    Diarization(String),
     #[error("Transcription completed but produced no text. Try selecting the language manually or use the Q5 model.")]
     EmptyTranscript,
     #[error("Configuration error: {0}")]
@@ -55,6 +57,7 @@ impl AppError {
             Self::Network(_) => "NETWORK_ERROR",
             Self::Audio(_) => "AUDIO_ERROR",
             Self::Whisper(_) => "WHISPER_ERROR",
+            Self::Diarization(_) => "DIARIZATION_ERROR",
             Self::EmptyTranscript => "EMPTY_TRANSCRIPT",
             Self::Config(_) => "CONFIG_ERROR",
             Self::Unexpected(_) => "UNEXPECTED_ERROR",

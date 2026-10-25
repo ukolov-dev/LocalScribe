@@ -14,3 +14,7 @@ src-tauri/binaries/ffmpeg-*
 *.part
 *.wav
 !src-tauri/tests/fixtures/media/*.wav
+
+# Native macOS build products
+macos/.build/
+macos/.swiftpm/

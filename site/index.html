@@ -6,7 +6,7 @@
     <title>LocalScribe — Private offline transcription for macOS</title>
     <meta
       name="description"
-      content="Transcribe audio and video locally on Apple Silicon Macs with Whisper. No cloud upload, no telemetry, editable timestamps, and open-source code."
+      content="Native macOS menu-bar transcription. Drop a recording to transcribe locally with automatic neural speaker labels. Apple Silicon, no cloud upload."
     />
     <meta
       name="keywords"
@@ -24,7 +24,7 @@
     <meta property="og:title" content="Private transcription, entirely on your Mac." />
     <meta
       property="og:description"
-      content="Local Whisper transcription for audio and video. No cloud upload. No telemetry."
+      content="Drop a recording from the menu bar. Local Whisper transcription and neural speaker labels. No cloud upload."
     />
     <meta property="og:url" content="https://ukolov-dev.github.io/LocalScribe/" />
     <meta
@@ -43,8 +43,8 @@
         "name": "LocalScribe",
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "macOS 13 or later on Apple Silicon",
-        "description": "Private, offline audio and video transcription for Apple Silicon Macs.",
-        "softwareVersion": "0.1.2",
+        "description": "Native menu-bar transcription with local Whisper and automatic neural speaker diarization.",
+        "softwareVersion": "0.3.0",
         "license": "https://opensource.org/license/mit",
         "url": "https://ukolov-dev.github.io/LocalScribe/",
         "codeRepository": "https://github.com/ukolov-dev/LocalScribe"
@@ -73,66 +73,69 @@
     <main id="main">
       <section class="hero section-shell" id="top">
         <div class="hero-copy reveal">
-          <h1>Private transcription,<br />entirely on your Mac.</h1>
+          <span class="release-label">Version 0.3.0 · Native SwiftUI</span>
+          <h1>Drop a recording.<br />Keep every voice.</h1>
           <p>
-            Turn audio and video into editable transcripts with local Whisper models.
-            No cloud upload. No telemetry.
+            Open LocalScribe from your menu bar and drop a recording. Transcription starts automatically, with local neural speaker labels.
+            Your media stays on your Mac.
           </p>
           <div class="hero-actions">
-            <a class="button button-primary" href="https://github.com/ukolov-dev/LocalScribe">
+            <a class="button button-primary" href="https://github.com/ukolov-dev/LocalScribe/releases/download/v0.3.0/LocalScribe_v0.3.0_aarch64.dmg">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.58 9.58 0 0 1 12 6.82c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" /></svg>
-              View on GitHub
+              Download for Apple Silicon
             </a>
             <a class="button button-secondary" href="https://github.com/ukolov-dev/LocalScribe#build-and-run">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14" /></svg>
               Build from source
             </a>
           </div>
+          <p class="release-note">macOS 13+ · Apple Silicon · <a href="https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.3.0">v0.3.0 prerelease</a><br />Ad-hoc signed, not notarized. macOS may require approval to open.</p>
         </div>
 
         <figure class="product-frame reveal">
           <img
-            src="assets/localscribe-transcript.png"
-            alt="LocalScribe showing local Whisper settings and an editable transcript with timestamps"
-            width="1440"
-            height="960"
+            src="assets/localscribe-menubar.svg"
+            alt="Illustration of the LocalScribe menu-bar panel with a drop zone and example transcript labeled by speaker"
+            width="1200"
+            height="920"
           />
-          <figcaption>LocalScribe running a completed local transcription.</figcaption>
+          <figcaption>Native menu-bar interface illustration with an example transcript.</figcaption>
         </figure>
       </section>
 
       <section class="steps section-shell" id="how">
-        <h2 class="section-title reveal">From recording to transcript in four steps.</h2>
+        <h2 class="section-title reveal">From your menu bar to a labeled transcript.</h2>
         <ol class="step-list">
           <li class="reveal">
             <span class="step-number">1</span>
             <svg class="step-icon" aria-hidden="true" viewBox="0 0 48 48"><rect x="8" y="11" width="32" height="23" rx="3"/><path d="M5 39h38M20 19l4-3 4 3v6l-4 3-4-3v-6Z"/></svg>
-            <h3>Choose a model</h3>
-            <p>Pick a Whisper model that fits your Mac.</p>
-            <span class="detail">Whisper GGML</span>
+            <h3>Open from the menu bar</h3>
+            <p>Click the icon to open the native SwiftUI panel. Choose a Whisper model once.</p>
+            <span class="detail">No Dock icon · No separate window</span>
           </li>
           <li class="reveal">
             <span class="step-number">2</span>
             <svg class="step-icon" aria-hidden="true" viewBox="0 0 48 48"><path d="M14 5h14l9 9v29H14V5Z"/><path d="M28 5v10h9M24 20v14m0 0 5-5m-5 5-5-5"/></svg>
             <h3>Drop in media</h3>
-            <p>Drag audio or video into LocalScribe.</p>
+            <p>Drop one recording into the panel. Processing starts automatically.</p>
             <span class="detail">AAC · WAV · MP3 · M4A · MP4 · MOV · WebM</span>
           </li>
           <li class="reveal">
             <span class="step-number">3</span>
             <svg class="step-icon" aria-hidden="true" viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="3"/><rect x="19" y="19" width="10" height="10"/><path d="M17 5v7m7-7v7m7-7v7M17 36v7m7-7v7m7-7v7M5 17h7m-7 7h7m-7 7h7m24-14h7m-7 7h7m-7 7h7"/></svg>
-            <h3>Transcribe locally</h3>
-            <p>All processing stays on your Mac using Whisper.</p>
-            <span class="detail">Metal or CPU</span>
+            <h3>Separate the voices</h3>
+            <p>Whisper transcribes the words; a local neural pipeline identifies voice changes.</p>
+            <span class="detail">Automatic speaker count · Always enabled</span>
           </li>
           <li class="reveal">
             <span class="step-number">4</span>
             <svg class="step-icon" aria-hidden="true" viewBox="0 0 48 48"><path d="M14 5h14l9 9v29H14V5Z"/><path d="M28 5v10h9M20 24h11M20 30h11M20 36h8"/></svg>
             <h3>Edit and export</h3>
-            <p>Review the transcript and export it your way.</p>
+            <p>Edit, copy, or export the labeled transcript. Your last draft is restored after relaunch.</p>
             <span class="detail">TXT · Markdown</span>
           </li>
         </ol>
+        <p class="speaker-note reveal">Speaker count is inferred automatically, with no two-person cap. Similar voices, noise, and overlapping speech can still cause mistakes. Labels identify voices within a recording, not people by name.</p>
       </section>
 
       <section class="privacy section-shell" id="privacy">
@@ -148,7 +151,7 @@
             <div class="flow-node">
               <svg aria-hidden="true" viewBox="0 0 48 48"><rect x="12" y="12" width="24" height="24" rx="3"/><rect x="19" y="19" width="10" height="10"/><path d="M17 5v7m14-7v7M17 36v7m14-7v7M5 17h7m-7 14h7m24-14h7m-7 14h7"/></svg>
               <strong>Local engine</strong>
-              <span>whisper.cpp</span>
+              <span>Whisper + neural diarization</span>
             </div>
             <span class="flow-arrow" aria-hidden="true">→</span>
             <div class="flow-node">
@@ -163,9 +166,9 @@
           <h2 class="editorial-title reveal">Open source, inspectable,<br />reproducible.</h2>
           <ul class="proof-list">
             <li class="reveal">Transcription runs through whisper.cpp on-device.</li>
-            <li class="reveal">Network access is used only for model downloads you request.</li>
+            <li class="reveal">Speech and speaker models download on first use; subsequent processing works offline.</li>
             <li class="reveal">The release sidecar is FFmpeg 8.1.2 built without GPL or nonfree components.</li>
-            <li class="reveal">MIT-licensed LocalScribe source on GitHub.</li>
+            <li class="reveal">Native SwiftUI interface and MIT-licensed source on GitHub.</li>
           </ul>
         </div>
       </section>
@@ -173,7 +176,7 @@
       <section class="closing section-shell">
         <div class="closing-copy reveal">
           <h2 class="editorial-title">Keep the recording private.<br />Keep the transcript useful.</h2>
-          <p>LocalScribe is an early open-source macOS app for Apple Silicon.</p>
+          <p>LocalScribe 0.3.0 is a native, open-source menu-bar app for Apple Silicon. Speech and speaker recognition run on your Mac.</p>
           <div class="hero-actions">
             <a class="button button-primary" href="https://github.com/ukolov-dev/LocalScribe">
               Star LocalScribe on GitHub
@@ -184,7 +187,7 @@
           </div>
         </div>
         <figure class="closing-product reveal">
-          <img src="assets/localscribe-transcript.png" alt="LocalScribe transcript editor" width="1440" height="960" />
+          <img src="assets/localscribe-menubar.svg" alt="Illustration of the native LocalScribe panel, with example speaker labels" width="1200" height="920" />
         </figure>
       </section>
     </main>
