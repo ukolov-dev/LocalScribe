@@ -13,14 +13,14 @@ LocalScribe is a privacy-first desktop speech-to-text app for macOS. It transcri
 The macOS interface is SwiftUI hosted in an AppKit menu-bar panel. It launches without a Dock icon or a visible window.
 
 > [!NOTE]
-> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The [v0.3.0 binary](https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.3.0) is an ad-hoc-signed prerelease: macOS Gatekeeper may require Control-clicking the app, choosing Open, and confirming once. A Developer ID signed and notarized build is planned.
+> LocalScribe is currently an alpha for Apple Silicon on macOS 13+. The [v0.3.1 binary](https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.3.1) is an ad-hoc-signed prerelease: macOS Gatekeeper may require Control-clicking the app, choosing Open, and confirming once. A Developer ID signed and notarized build is planned.
 
 ## Why LocalScribe?
 
 - **Offline transcription:** audio and video are processed on-device instead of being uploaded to a cloud transcription service.
 - **Local Whisper models:** download supported GGML models or select a custom Whisper `.bin` file.
-- **macOS tray panel:** drop a recording or choose a file to start immediately. Settings remain collapsed until needed. LocalScribe runs in the macOS menu bar without a Dock icon, with its interface hidden until the tray icon is clicked. Click the menu-bar icon to show or hide the panel, anchored below the icon and kept within the screen. Closing the window keeps transcription running in the tray; use Quit LocalScribe in the tray menu to exit.
-- **Common media formats:** open standalone AAC/ADTS, WAV, MP3, M4A, MP4, MOV, and WebM files.
+- **macOS tray panel:** drop a recording or choose a file to start immediately. Settings remain collapsed until needed. LocalScribe runs in the macOS menu bar without a Dock icon, with its interface hidden until the tray icon is clicked. Click the menu-bar icon to show or hide the panel, anchored below the icon and kept within the screen. Reopen the running app from Finder to show the panel even if the menu-bar icon is not visible; the current transcription keeps running. Closing the window keeps transcription running in the tray; use Quit LocalScribe in the tray menu to exit.
+- **Common media formats:** open standalone AAC/ADTS, WAV, MP3, M4A, MP4, MOV, WebM, and MKV files. Only the audio track is transcribed; video is ignored.
 - **Useful output:** edit the transcript, keep timestamps, automatically identify speakers, and export to `TXT` or Markdown.
 - **Multilingual speech recognition:** use automatic, multilingual, or language-specific decoding modes.
 - **Native macOS interface:** SwiftUI + AppKit. The existing Rust/Whisper engine runs as a private background process without windows or WebViews.
@@ -33,6 +33,8 @@ The macOS interface is SwiftUI hosted in an AppKit menu-bar panel. It launches w
 4. Speaker detection always runs, including for imported meetings. Edit, copy, or export the result. Use Stop to cancel; Escape or the close button hides the panel while processing continues.
 
 Speaker diarization uses local Pyannote segmentation and 3D-Speaker ERes2Net embeddings through sherpa-onnx. The number of voices is inferred automatically without a two-person cap. The 46 MB model pack downloads automatically on first use with pinned revisions and SHA-256 verification. A new drop is rejected while a recording is being processed. The latest transcript and edits are saved in a local owner-only draft and restored after relaunch.
+
+Look for the compact waveform icon in the menu bar; its tooltip identifies LocalScribe. Reopening the app from Finder also restores the icon and opens the panel.
 
 After manual edits, TXT and Markdown export the edited text without the original segment timestamps. The editor is read-only while transcription runs.
 
@@ -132,7 +134,7 @@ Known limitations:
 - Speaker diarization can confuse similar voices, short interjections and overlapping speech. It assigns anonymous Speaker N labels within each recording; it does not identify a person by name or recover two simultaneous transcripts. Old unused speaker-model files remain on disk for compatibility; the active pipeline uses the Pyannote + 3D-Speaker pack.
 - The full Turbo model can be slow when running on CPU.
 - `SRT` and `VTT` export are planned; the current app exports `TXT` and `MD`.
-- The v0.3.0 macOS prerelease is not Developer ID signed or notarized.
+- The v0.3.1 macOS prerelease is not Developer ID signed or notarized.
 - Production Developer ID secrets are not configured in GitHub yet.
 - Downloadable model licenses must be rechecked before the project ever bundles models directly.
 

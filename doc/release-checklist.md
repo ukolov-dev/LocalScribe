@@ -6,16 +6,18 @@
 - `cargo test` passes in `src-tauri`.
 - `npm run build` passes.
 - `npm run ffmpeg:build` builds FFmpeg 8.1.2 with LGPL-only configuration.
-- `npm run ffmpeg:verify` decodes all six committed media fixtures.
+- `npm run ffmpeg:verify` decodes all eight committed media fixtures.
 - `swift test --package-path macos` passes.
 - `LOCALSCRIBE_RELEASE=1 ./script/build_and_run.sh --build-only` produces `macos/.build/LocalScribe.app`.
 - `macos/.build/LocalScribe.app/Contents/MacOS/ffmpeg -version` works.
 - Launch shows a menu-bar icon without a Dock icon or open panel; clicking the icon toggles the SwiftUI panel below it.
+- Reopening the running app from Finder shows the panel without restarting transcription; repeated reopen requests keep it visible.
+- The menu-bar control remains a compact waveform icon on built-in and external displays; changing displays and reopening restores a hidden item without creating duplicates.
 - Dropping one recording starts transcription automatically with speaker labels; hiding the panel keeps processing active.
 - Relaunch restores the last transcript and edits from the local draft.
 - Model download is tested from UI with `large-v3-turbo-q5_0`.
 - Failed model download leaves only `.part` file and can be retried.
-- `aac`, `mp3`, `wav`, `m4a`, `mp4`, `mov`, and `webm` inputs are smoke-tested.
+- `aac`, `mp3`, `wav`, `m4a`, `mp4`, `mov`, `webm`, and `mkv` inputs are smoke-tested; video containers yield audio only.
 - Russian speech is tested with `large-v3-turbo-q5_0`.
 - Exported `TXT` and `MD` files are opened and timestamp formats are checked.
 - CLI smoke test in `doc/smoke-test.md` passes.

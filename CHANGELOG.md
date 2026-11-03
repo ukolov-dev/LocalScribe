@@ -2,6 +2,25 @@
 
 All notable changes to LocalScribe are documented here.
 
+## [0.3.1] - 2026-11-03
+
+### Added
+
+- MKV input in native and compatibility file pickers, drag-and-drop, and meeting
+  imports. Only audio is extracted; video is ignored.
+- Synthetic MKV decoding coverage and regression tests for input and window recovery.
+
+### Fixed
+
+- Reopening the running app from Finder now shows the existing panel and transcript.
+- The menu-bar item uses a compact waveform icon instead of a wide text label.
+  Activation, reopening, and display changes restore a hidden item without duplicates.
+
+### Known limitations
+
+- Ad-hoc signed Apple Silicon prerelease, not Developer ID signed or notarized.
+- macOS can still hide menu-bar items when there is insufficient space.
+
 ## [0.3.0] - 2026-10-25
 
 ### Added
@@ -69,3 +88,5 @@ All notable changes to LocalScribe are documented here.
 [0.1.0]: https://github.com/ukolov-dev/LocalScribe/releases/tag/v0.1.0
 
 [0.3.0]: https://github.com/ukolov-dev/LocalScribe/compare/v0.1.2...v0.3.0
+
+[0.3.1]: https://github.com/ukolov-dev/LocalScribe/compare/v0.3.0...v0.3.1

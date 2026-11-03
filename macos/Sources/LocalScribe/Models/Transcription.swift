@@ -56,11 +56,11 @@ struct TranscriptionOptions: Encodable {
     var json: [String: Any] { (try? JSONSerialization.jsonObject(with: JSONEncoder().encode(self))) as? [String: Any] ?? [:] }
 }
 enum RecordingInput {
-    static let extensions: Set<String> = ["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"]
+    static let extensions: Set<String> = ["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm", "mkv"]
     static func validate(_ urls: [URL]) throws -> URL {
         guard urls.count == 1 else { throw NativeError("Перетащите одну запись.") }
         let url = urls[0].standardizedFileURL
-        guard url.isFileURL, extensions.contains(url.pathExtension.lowercased()) else { throw NativeError("Поддерживаются AAC, MP3, WAV, M4A, MP4, MOV и WebM.") }
+        guard url.isFileURL, extensions.contains(url.pathExtension.lowercased()) else { throw NativeError("Поддерживаются AAC, MP3, WAV, M4A, MP4, MOV, WebM и MKV.") }
         var directory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &directory), !directory.boolValue else { throw NativeError("Файл записи не найден.") }
         return url

@@ -21,7 +21,7 @@ struct ContentView: View {
                     Image(systemName: targeted ? "arrow.down.doc.fill" : "arrow.up.doc").font(.system(size: 32, weight: .light))
                     Text(store.busy ? "Обрабатывается запись…" : "Перетащите запись").font(.title3.weight(.semibold))
                     Text("Расшифровка начнётся автоматически").font(.callout)
-                    Text("AAC · MP3 · WAV · M4A · MP4 · MOV · WebM").font(.caption).foregroundStyle(.secondary)
+                    Text("AAC · MP3 · WAV · M4A · MP4 · MOV · WebM · MKV").font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 23)
                 .background(Color.accentColor.opacity(targeted ? 0.17 : 0.07), in: RoundedRectangle(cornerRadius: 14))

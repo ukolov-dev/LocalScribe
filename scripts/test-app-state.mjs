@@ -19,7 +19,10 @@ const modules = {
   "@tauri-apps/api/event": `export const listen = (...args) => globalThis.appTest.listen(...args);`,
   "@tauri-apps/api/window": `export const getCurrentWindow = () => ({ onDragDropEvent: callback => globalThis.appTest.listen("drag-drop", callback) });`,
   "@tauri-apps/plugin-dialog": `
-    export const open = async () => "/tmp/input.wav";
+    export const open = async options => {
+      globalThis.appTest.openOptions = options;
+      return globalThis.appTest.openFilePath ?? "/tmp/input.wav";
+    };
     export const save = async () => "/tmp/transcript.md";`,
   "./lib/tauri": `
     export const listModels = async () => {
@@ -185,6 +188,23 @@ try {
   assert.equal(failed.modelLoads, 1, "job changes must not reload models and clear errors");
   failed.find(element => element.props?.children === "Whisper failed");
   failed.unmount();
+
+  const mkv = await initialized({ openFilePath: "/tmp/recording.mkv" });
+  await start(mkv);
+  assert(mkv.openOptions.filters[0].extensions.includes("mkv"), "file picker must include MKV");
+  assert.equal(mkv.options.filePath, "/tmp/recording.mkv");
+  mkv.resolveJob({ jobId: mkv.options.jobId, text: "MKV audio", segments: [] });
+  await settle();
+  mkv.render();
+  await settle();
+  mkv.emit("drag-drop", { type: "drop", paths: ["/tmp/recording.MKV"] });
+  mkv.render();
+  mkv.render();
+  assert.equal(mkv.jobs.length, 2, "uppercase MKV drops must start a job");
+  assert.equal(mkv.options.filePath, "/tmp/recording.MKV");
+  mkv.resolveJob({ jobId: mkv.options.jobId, text: "MKV audio again", segments: [] });
+  await settle();
+  mkv.unmount();
 
   const live = await initialized();
   const staleError = live.listeners.find(listener => listener.name === "transcription-error").callback;

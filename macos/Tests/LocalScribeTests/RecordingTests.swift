@@ -1,4 +1,5 @@
 import XCTest
+import UniformTypeIdentifiers
 @testable import LocalScribe
 
 final class RecordingTests: XCTestCase {
@@ -17,6 +18,16 @@ final class RecordingTests: XCTestCase {
         XCTAssertThrowsError(try RecordingInput.validate([url]))
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
         XCTAssertThrowsError(try RecordingInput.validate([url]))
+    }
+    func testAcceptsMKVRecordingsAndIncludesThemInTheFilePicker() throws {
+        for extensionName in ["mkv", "MKV"] {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + "." + extensionName)
+            defer { try? FileManager.default.removeItem(at: url) }
+            try Data([1]).write(to: url)
+            XCTAssertEqual(try RecordingInput.validate([url]), url.standardizedFileURL)
+        }
+        XCTAssertTrue(RecordingInput.extensions.contains("mkv"))
+        XCTAssertNotNil(UTType(filenameExtension: "mkv"))
     }
     func testEveryNativeRequestIncludesSpeakers() {
         let options = TranscriptionOptions(jobId: "job", filePath: "/tmp/a.wav", modelId: "large-v3-turbo", language: "multi", decodingPreset: "balanced", initialPrompt: nil, timestamps: true, threads: nil)

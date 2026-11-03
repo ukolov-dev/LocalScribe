@@ -65,7 +65,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     autoStartHint: "Transcription starts automatically",
     alwaysSpeakers: "Speakers are always identified",
     speakerLimit: "Neural diarization · automatic speaker count",
-    unsupportedFile: "Choose an audio or video file: aac, mp3, wav, m4a, mp4, mov, webm.",
+    unsupportedFile: "Choose an audio or video file: aac, mp3, wav, m4a, mp4, mov, webm, mkv.",
     oneFileOnly: "Drop one recording at a time.",
     retry: "Try again",
     transcriptPlaceholder: "Your transcript with speaker labels will appear here.",
@@ -80,7 +80,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     stateError: "Error",
     dropZoneDefault: "Drop audio/video here",
     dropZoneDragging: "Drop file here",
-    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm",
+    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm, mkv",
     modelLabel: "Model",
     modelHint: "Recommended: Turbo Q5 for best performance",
     engineLabel: "Engine",
@@ -159,7 +159,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     autoStartHint: "Расшифровка начнётся автоматически",
     alwaysSpeakers: "Спикеры определяются всегда",
     speakerLimit: "Нейросеть · число голосов автоматически",
-    unsupportedFile: "Выберите аудио или видео: aac, mp3, wav, m4a, mp4, mov, webm.",
+    unsupportedFile: "Выберите аудио или видео: aac, mp3, wav, m4a, mp4, mov, webm, mkv.",
     oneFileOnly: "Перетаскивайте по одной записи.",
     retry: "Повторить",
     transcriptPlaceholder: "Здесь появится текст со спикерами.",
@@ -174,7 +174,7 @@ const translations: Record<InterfaceLanguage, Record<string, string>> = {
     stateError: "Ошибка",
     dropZoneDefault: "Перетащите запись",
     dropZoneDragging: "Отпустите файл",
-    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm",
+    dropZoneFormats: "aac, mp3, wav, m4a, mp4, mov, webm, mkv",
     modelLabel: "Модель",
     modelHint: "Рекомендуется: Turbo Q5 для лучшей производительности",
     engineLabel: "Движок",
@@ -608,7 +608,7 @@ function App() {
       setError(tx('oneFileOnly'));
       return;
     }
-    if (!/\.(aac|mp3|wav|m4a|mp4|mov|webm)$/i.test(path)) {
+    if (!/\.(aac|mp3|wav|m4a|mp4|mov|webm|mkv)$/i.test(path)) {
       setError(tx('unsupportedFile'));
       return;
     }
@@ -625,7 +625,7 @@ function App() {
       filters: [
         {
           name: "Audio and video",
-          extensions: ["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"]
+          extensions: ["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm", "mkv"]
         }
       ]
     });

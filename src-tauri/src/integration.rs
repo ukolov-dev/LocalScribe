@@ -19,7 +19,7 @@ use tauri::AppHandle;
 use uuid::Uuid;
 
 const SCHEMA_VERSION: u32 = 1;
-const SUPPORTED_EXTENSIONS: &[&str] = &["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"];
+const SUPPORTED_EXTENSIONS: &[&str] = &["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm", "mkv"];
 
 pub fn initialize(app: &AppHandle) -> AppResult<()> {
     let dir = integration_dir(app)?;
@@ -797,6 +797,20 @@ mod tests {
         assert!(validate_job_id("express-123e4567-e89b-12d3-a456-426614174000_1").is_ok());
         assert!(validate_job_id("../escape").is_err());
         assert!(validate_job_id("").is_err());
+    }
+
+    #[test]
+    fn claims_mkv_recordings() {
+        let dir = TestDir::new();
+        initialize_dir(&dir.0).unwrap();
+        let media_path = dir.0.join("meeting.MKV");
+        fs::write(&media_path, b"audio").unwrap();
+        let request = request(&media_path, "express-mkv");
+        write_request(&dir.0.join("inbox/express-mkv.json"), &request);
+
+        let claimed = claim_next_in_dir(&dir.0).unwrap().unwrap();
+
+        assert_eq!(claimed.media_path, request.media_path);
     }
 
     #[test]

@@ -7,7 +7,7 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-const SUPPORTED_EXTENSIONS: &[&str] = &["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm"];
+const SUPPORTED_EXTENSIONS: &[&str] = &["aac", "mp3", "wav", "m4a", "mp4", "mov", "webm", "mkv"];
 
 pub struct PreparedAudio {
     pub samples: Vec<f32>,
@@ -205,14 +205,17 @@ mod tests {
     use uuid::Uuid;
 
     #[test]
-    fn accepts_standalone_aac_files() {
-        let path = std::env::temp_dir().join(format!("localscribe-{}.AAC", Uuid::new_v4()));
-        fs::write(&path, b"synthetic test fixture").expect("create AAC input");
+    fn accepts_aac_and_mkv_files() {
+        for extension in ["AAC", "mkv", "MKV"] {
+            let path =
+                std::env::temp_dir().join(format!("localscribe-{}.{extension}", Uuid::new_v4()));
+            fs::write(&path, b"synthetic test fixture").expect("create input");
 
-        let result = validate_input_file(&path);
-        fs::remove_file(&path).expect("remove AAC input");
+            let result = validate_input_file(&path);
+            fs::remove_file(&path).expect("remove input");
 
-        assert!(result.is_ok());
+            assert!(result.is_ok(), "rejected {extension}: {result:?}");
+        }
     }
     #[cfg(unix)]
     #[test]
